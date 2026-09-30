@@ -1,0 +1,68 @@
+### Environment Variables
+@baseUrl = http://localhost:8000
+@internalKey = dev-secret-key-change-in-production
+
+### 1. Thành công chuẩn (Standard Success: Sốt ho đau họng)
+POST {{baseUrl}}/internal/predict-disease
+Content-Type: application/json
+X-Internal-Key: {{internalKey}}
+
+{
+  "symptoms": "Đau họng, sốt nhẹ, ho khan",
+  "diagnosis": "",
+  "patient": {
+    "age": 28,
+    "gender": "male",
+    "allergies": ["penicillin"]
+  },
+  "topK": 3
+}
+
+### 2. Sai / Thiếu API Key (Expected: 401 Unauthorized)
+POST {{baseUrl}}/internal/predict-disease
+Content-Type: application/json
+X-Internal-Key: wrong-or-missing-key
+
+{
+  "symptoms": "Đau họng, sốt nhẹ, ho khan"
+}
+
+### 3. Body rỗng / Sai kiểu dữ liệu (Expected: 422 Unprocessable Entity)
+POST {{baseUrl}}/internal/predict-disease
+Content-Type: application/json
+X-Internal-Key: {{internalKey}}
+
+{
+  "symptoms": ""
+}
+
+### 4. Triệu chứng không đủ để gợi ý (< 2 symptoms) (Expected: 200 OK with empty diseases and warning)
+POST {{baseUrl}}/internal/predict-disease
+Content-Type: application/json
+X-Internal-Key: {{internalKey}}
+
+{
+  "symptoms": "sốt nhẹ"
+}
+
+### 5. Ca có dấu hiệu nguy cấp Red Flag (Expected: 200 OK with non-empty redFlags)
+POST {{baseUrl}}/internal/predict-disease
+Content-Type: application/json
+X-Internal-Key: {{internalKey}}
+
+{
+  "symptoms": "Bệnh nhân đau thắt ngực dữ dội, toát mồ hôi, khó thở đột ngột",
+  "topK": 3
+}
+
+### 6. Kiểm tra trạng thái hệ thống (Health Check)
+GET {{baseUrl}}/health
+
+### 7. Chatbot Placeholder (Expected: 501 Not Implemented)
+POST {{baseUrl}}/internal/chatbot
+Content-Type: application/json
+X-Internal-Key: {{internalKey}}
+
+{
+  "message": "Xin chào"
+}
