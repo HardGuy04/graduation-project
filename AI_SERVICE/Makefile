@@ -13,6 +13,7 @@ help:
 	@echo "  lint        - Run ruff linter and mypy type checker"
 	@echo "  run         - Run FastAPI service locally"
 	@echo "  docker      - Build Docker container image"
+	@echo "  clean       - Clean up all caches, bytecode, and temporary files"
 
 setup:
 	$(PYTHON) -m pip install -r requirements-dev.txt
@@ -41,3 +42,6 @@ run:
 
 docker:
 	docker build -t ai-service:latest .
+
+clean:
+	$(PYTHON) -c "import shutil, glob, os; [shutil.rmtree(p, ignore_errors=True) for p in glob.glob('**/__pycache__', recursive=True) + glob.glob('.*_cache')]; [os.remove(f) for f in glob.glob('**/*.py[cod]', recursive=True) + ['.coverage'] if os.path.exists(f)]"
