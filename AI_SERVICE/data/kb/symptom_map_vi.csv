@@ -1,0 +1,133 @@
+symptom_id,name_en,name_vi,aliases_vi,reviewed,source
+abdominal_pain,abdominal pain,đau quặn bụng,dau bung;dau quan bung;dau bung duoi;dau bung quanh ron,false,TODO
+abnormal_menstruation,abnormal menstruation,rối loạn kinh nguyệt,roi loan kinh nguyet;kinh nguyet khong deu;rong kinh;kinh nguyet bat thuong,false,TODO
+acidity,acidity,chua miệng (ợ chua dư axit),o chua;du axit;chua mieng;nong rat da day,false,TODO
+acute_liver_failure,acute liver failure,suy gan cấp tính,suy gan;suy gan cap;nhiem doc gan,false,TODO
+altered_sensorium,altered sensorium,rối loạn tri giác (lẫn lộn mê sảng),lan lon;me sang;suy giam y thuc;tri giac mo mang;roi loan y thuc,false,TODO
+anxiety,anxiety,lo âu bồn chồn,lo au;bon chon;lo lang;bat an,false,TODO
+back_pain,back pain,đau lưng,dau lung;nhuc lung;moi lung;dau cot song lung,false,TODO
+belly_pain,belly pain,đau bụng dưới âm ỉ,dau bung;dau bung duoi;nhuc bung;dau bung am i,false,TODO
+blackheads,blackheads,mụn đầu đen,mun dau den;mun dau trang;mun cam,false,TODO
+bladder_discomfort,bladder discomfort,tức bàng quang khó chịu vùng bọng đái,tuc bang quang;kho chiu vung bong dai;tuc bung duoi do mac tieu,false,TODO
+blister,blister,mụn nước phồng rộp,mun nuoc;phong rop;bong nuoc;phong da,false,TODO
+blood_in_sputum,blood in sputum,ho khạc ra máu trong đờm,ho ra mau;dom co mau;khac ra mau;dom lan mau,false,TODO
+bloody_stool,bloody stool,đi ngoài ra máu (phân có máu),di ngoai ra mau;phan co mau;di cau ra mau;mau trong phan,false,TODO
+blurred_and_distorted_vision,blurred and distorted vision,mắt nhìn mờ méo hình,nhin mo;mat mo;mo mat;nhin hinh meo mo;giam thi luc,false,TODO
+breathlessness,breathlessness,khó thở (hụt hơi),kho tho;hut hoi;tho doc;tho gap;ngop tho,false,TODO
+brittle_nails,brittle nails,móng tay giòn dễ gãy,mong gion;mong tay de gay;mong yeu;nứt mong,false,TODO
+bruising,bruising,vết bầm tím dưới da,bam tim;xuat huyet duoi da;vet bam;bầm da,false,TODO
+burning_micturition,burning micturition,tiểu buốt (tiểu rát nóng),tieu buot;tieu rat;dai buot;dai dat;nong rat khi di tieu,false,TODO
+chest_pain,chest pain,đau tức ngực,dau nguc;tuc nguc;dau that nguc;nhoi nguc;dau tuc vung nguc,false,TODO
+chills,chills,ớn lạnh,on lanh;cam giac lanh;on lanh so gio;so lanh,false,TODO
+cold_hands_and_feets,cold hands and feets,chân tay lạnh buốt,tay chan lanh;lanh tay chan;tay chan buot lanh,false,TODO
+coma,coma,hôn mê bất tỉnh,hon me;bat tinh;khong biet gi;hon me sau,false,TODO
+congestion,congestion,nghẹt mũi (ngạt mũi),nghet mui;ngat mui;kho tho do nghet mui;tac mui,false,TODO
+constipation,constipation,táo bón,tao bon;kho di cau;bon;khong di ngoai duoc,false,TODO
+continuous_feel_of_urine,continuous feel of urine,mót tiểu liên tục (buồn tiểu mãi),buon tieu lien tuc;mot tieu;tieu dat tieu lien tuc;luc nao cung buon tieu,false,TODO
+continuous_sneezing,continuous sneezing,hắt hơi liên tục,hat hoi;hat xi;hat xi lien tuc;nhay mui,false,TODO
+cough,cough,ho,ho;ho gio;ho khan;ho co dom;con ho,false,TODO
+cramps,cramps,chuột rút (co cứng cơ),chuot rut;co rut co;co cung bap chan;vop be,false,TODO
+dark_urine,dark urine,nước tiểu sẫm màu (nước tiểu sậm),nuoc tieu sam;nuoc tieu vang dam;nuoc tieu mau tra dac;nuoc tieu den,false,TODO
+dehydration,dehydration,mất nước,mat nuoc;khat nuoc lien tuc;kho mieng mat nuoc,false,TODO
+depression,depression,trầm cảm u uất,tram cam;u uat;tam trang chan nan;buon ba keo dai,false,TODO
+diarrhoea,diarrhoea,tiêu chảy (đi ngoài phân lỏng),tieu chay;di ngoai;di ngoai phan long;tao thao duoi;di tieu long,false,TODO
+dischromic_patches,dischromic patches,mảng da đổi màu loang lổ,da loang lo;mang da doi mau;da khong deu mau;vet lang ben,false,TODO
+distention_of_abdomen,distention of abdomen,chướng căng phình bụng,chuong bung;phinh bung;bung cang cung;cang chuong bung,false,TODO
+dizziness,dizziness,chóng mặt hoa mắt,chong mat;hoa mat;choang vang;chong mat xay xam,false,TODO
+drying_and_tingling_lips,drying and tingling lips,môi khô rát tê bì,moi kho te bi;kho moi;te moi;moi nut ne,false,TODO
+enlarged_thyroid,enlarged thyroid,bướu cổ (tuyến giáp to),buou co;tuyen giap to;sung o co;buou giap,false,TODO
+excessive_hunger,excessive hunger,mau đói (ăn nhiều nhanh đói),nhanh doi;doi lien tuc;them an nhieu;an nhieu ma van doi,false,TODO
+extra_marital_contacts,extra marital contacts,quan hệ tình dục không an toàn ngoài luồng,quan he ngoai luong;quan he khong an toan;tinh duc khong bao ve,false,TODO
+family_history,family history,tiền sử gia đình có người mắc bệnh,tien su gia dinh;gia dinh co nguoi bi;yeu to di truyen,false,TODO
+fast_heart_rate,fast heart rate,tim đập nhanh hồi hộp,tim dap nhanh;nhip tim nhanh;dap thinh thich;hoi hop,false,TODO
+fatigue,fatigue,mệt mỏi kiệt sức,met;met moi;u oai;met moi kiẹt suc;suy nhuoc,false,TODO
+fluid_overload,fluid overload,ứ dịch phù nề toàn thân,u dich;phu toan than;tich nuoc;nang nguoi do phu,false,TODO
+fluid_overload_1,fluid overload 1,fluid overload 1,fluid overload 1,false,TODO
+foul_smell_of_urine,foul smell of urine,nước tiểu có mùi hôi nồng,nuoc tieu hoi;mui nuoc tieu nong;nuoc tieu mui kham;tieu mui la,false,TODO
+headache,headache,đau đầu (nhức đầu),dau dau;nhuc dau;dau buot dau;dau nua dau;dau dau am i,false,TODO
+high_fever,high fever,sốt cao,sot cao;sot nong;nhiet do cao;sot tren 38 do;sot cao lien tuc,false,TODO
+hip_joint_pain,hip joint pain,đau khớp háng,dau khop hang;nhuc khop hang;dau vung hang,false,TODO
+history_of_alcohol_consumption,history of alcohol consumption,tiền sử nghiện rượu bia,uong ruou;uong ruou bia thuong xuyen;nghien ruou;uong bia nhieu,false,TODO
+increased_appetite,increased appetite,thèm ăn nhiều bất thường,them an;an nhieu;luc nao cung them an;an khong no,false,TODO
+indigestion,indigestion,khó tiêu (đầy hơi chướng bụng),kho tieu;day bung;an khong tieu;chuong bung,false,TODO
+inflammatory_nails,inflammatory nails,viêm quanh móng sưng đỏ,viem quanh mong;sung quanh mong tay;sung mong;viem phao mong,false,TODO
+internal_itching,internal itching,ngứa râm ran bên trong,ngua ben trong;ngua ran ran;ngua sau trong da,false,TODO
+irregular_sugar_level,irregular sugar level,đường huyết dao động thất thường,duong huyet that thuong;duong mau dao dong;duong huyet cao,false,TODO
+irritability,irritability,dễ nổi cáu bực bội,de noi cau;buc boi;de cau gat;nong nay bat thuong,false,TODO
+irritation_in_anus,irritation in anus,ngứa rát khó chịu ở hậu môn,ngua hau mon;rat hau mon;kho chiu o hau mon,false,TODO
+itching,itching,ngứa da,ngua;ngua ngay;ngua da;ngua khap nguoi,false,TODO
+joint_pain,joint pain,đau nhức khớp,dau khop;dau nhuc khop;moi khop;nhuc khop,false,TODO
+knee_pain,knee pain,đau nhức khớp gối,dau khop goi;dau dau goi;moi goi;nhuc khop goi,false,TODO
+lack_of_concentration,lack of concentration,giảm tập trung chú ý,kho tap trung;kem tap trung;hay quen;giam su tap trung,false,TODO
+lethargy,lethargy,lờ đờ uể oải,lo do;u oai;thieu suc song;ngu li bi,false,TODO
+loss_of_appetite,loss of appetite,chán ăn (ăn không ngon),chan an;an khong ngon;khong muon an;bieng an,false,TODO
+loss_of_balance,loss of balance,mất thăng bằng,mat thang bang;dung khong vung;di loang choang;khong giu duoc thang bang,false,TODO
+loss_of_smell,loss of smell,mất khứu giác (không ngửi thấy mùi),mat khuoc giac;khong ngui thay mui;mat mui;khong nhan biet mui,false,TODO
+malaise,malaise,khó chịu toàn thân (bứt rứt rã rời),kho chiu toan than;ra roi;kho chiu trong nguoi;buc boi,false,TODO
+mild_fever,mild fever,sốt nhẹ,sot nhe;ham hap sot;am dau;nhiet do hoi cao,false,TODO
+mood_swings,mood swings,thay đổi tâm trạng thất thường,thay doi tam trang;that thuong;de ca khao;tam trang thay doi,false,TODO
+movement_stiffness,movement stiffness,cứng khớp khi vận động,cung khop buoi sang;kho van dong;khop bi cung,false,TODO
+mucoid_sputum,mucoid sputum,đờm nhầy trong nhầy trắng,dom nhay;dom trong;khac ra dom nhay;dom nhay trang,false,TODO
+muscle_pain,muscle pain,đau nhức cơ bắp,dau co;nhuc bắp thit;dau moi toan than;dau nhuc co bap,false,TODO
+muscle_wasting,muscle wasting,teo cơ (teo nhược cơ),teo co;teo bắp thit;yeu co teo co,false,TODO
+muscle_weakness,muscle weakness,yếu cơ giảm trương lực,yeu co;nhuoc co;co khong co suc;yeu bắp thit,false,TODO
+nausea,nausea,buồn nôn,buon non;mac oi;nôn nao;buon oi,false,TODO
+neck_pain,neck pain,đau mỏi cổ,dau co;moi co;dau vai gay;cung co;dau co gay,false,TODO
+nodal_skin_eruptions,nodal skin eruptions,nổi nốt cục sần trên da,noi cuc san;man ngua dang cuc;not tren da;mun san,false,TODO
+obesity,obesity,thừa cân béo phì,beo phi;thua can;qua can;bung to beo,false,TODO
+pain_behind_the_eyes,pain behind the eyes,đau nhức sau hốc mắt,dau sau hoc mat;nhuc sau mat;dau hoc mat;nhuc mat,false,TODO
+pain_during_bowel_movements,pain during bowel movements,đau rát khi đi cầu,dau khi di cau;dau khi di ngoai;rat hau mon khi di cau,false,TODO
+pain_in_anal_region,pain in anal region,đau nhức vùng hậu môn,dau hau mon;nhuc vung hau mon;dau buot hau mon,false,TODO
+painful_walking,painful walking,đau buốt khi đi lại,di lai dau;di dau chan;kho di lai;dau khi buoc di,false,TODO
+palpitations,palpitations,hồi hộp đánh trống ngực,danh trong nguc;hoi hop;tim dap thinh thich;tim dap thon thuc,false,TODO
+passage_of_gases,passage of gases,trung tiện nhiều (xì hơi liên tục),xi hoi;danh ram;day hoi xì hoi nhieu;trung tien,false,TODO
+patches_in_throat,patches in throat,đốm mảng trắng trong họng,mang trang o hong;dom hong;lo loet hong;mang trang amidan,false,TODO
+phlegm,phlegm,có đờm (khạc ra đờm),dom;co dom;ho co dom;khac dom;dom dac,false,TODO
+polyuria,polyuria,tiểu nhiều lần trong ngày (đa niệu),tieu nhieu;di tieu nhieu lan;da nieu;dem tieu nhieu lan,false,TODO
+prominent_veins_on_calf,prominent veins on calf,nổi gân tĩnh mạch phồng ở bắp chân,noi gân xanh o bap chan;gian tinh mach chan;gan xanh noi ro o chan,false,TODO
+puffy_face_and_eyes,puffy face and eyes,phù mặt và mí mắt,mat sung phu;phu mat;sung mi mat;mat hup,false,TODO
+pus_filled_pimples,pus filled pimples,mụn mủ sưng đỏ,mun mu;mun co mu;mun sung do;mun boc mu,false,TODO
+receiving_blood_transfusion,receiving blood transfusion,tiền sử truyền máu,truyen mau;tung duoc truyen mau;nhan mau,false,TODO
+receiving_unsterile_injections,receiving unsterile injections,tiêm chích kim tiêm không vô trùng,tiem chich;chich kim khong vo trung;dung chung kim tiem,false,TODO
+red_sore_around_nose,red sore around nose,vết loét đỏ quanh mũi miệng,loet quanh mui;vet loet mui;do quanh mui;lo mui,false,TODO
+red_spots_over_body,red spots over body,chấm xuất huyết đỏ rải rác toàn thân,cham do tren da;xuat huyet cham;cham do khap nguoi;not do tren da,false,TODO
+redness_of_eyes,redness of eyes,đỏ mắt (mắt đỏ ngầu),do mat;mat do;sung mat;do long trang,false,TODO
+restlessness,restlessness,bứt rứt không yên,but rut;kho chiu;khong yen;bon chon kho chiu,false,TODO
+runny_nose,runny nose,chảy nước mũi,chay nuoc mui;so mui;chay mui;nuoc mui trong,false,TODO
+rusty_sputum,rusty sputum,đờm màu rỉ sắt,dom mau ri sat;dom mau nau ri;dom co vet nau,false,TODO
+scurring,scurring,sẹo lõm sẹo thâm sau mụn,seo tham;seo mun;seo lom;vet tham sau mun,false,TODO
+shivering,shivering,run rẩy rùng mình,run;run ray;rung minh;lanh run,false,TODO
+silver_like_dusting,silver like dusting,vảy trắng như bụi phấn bạc trên da,vay trang bac;bui phan tren da;vay trang nhu phan;vay nen trang,false,TODO
+sinus_pressure,sinus pressure,áp lực xoang (căng tức vùng mặt xoang),cang tuc xoang;dau xoang;nhuc vung tran mat;tuc vung xoang,false,TODO
+skin_peeling,skin peeling,da bong tróc vảy,da bong troc;troc da;bong da;da bong vay,false,TODO
+skin_rash,skin rash,phát ban ngoài da,phat ban;noi man do;noi ban;man do,false,TODO
+slurred_speech,slurred speech,nói ngọng líu lưỡi (khó phát âm),noi ngong;liu luoi;kho noi;noi kho nghe;meo tieng,false,TODO
+small_dents_in_nails,small dents in nails,móng tay có vết rỗ chấm nhỏ,mong tay ro;cham ro tren mong;mong tay lom dom;ro mong,false,TODO
+spinning_movements,spinning movements,chóng mặt cảm giác nhà cửa quay cuồng,nha cua quay cuong;quay cuong;cam giac xoay tron;chong mat quay,false,TODO
+spotting_urination,spotting urination,tiểu nhỏ giọt (tiểu ngắt quãng),tieu nho giot;dai nho giot;tieu khong het;ngat quang khi tieu,false,TODO
+stiff_neck,stiff neck,cứng cổ khó quay,cung co;kho quay co;cung gay;co cung co,false,TODO
+stomach_bleeding,stomach bleeding,"xuất huyết dạ dày (nôn ra máu, đi ngoài phân đen)",xuat huyet da day;non ra mau;phan den;chay mau bao tu,false,TODO
+stomach_pain,stomach pain,đau dạ dày (đau bụng trên),dau da day;dau bao tu;dau bung tren;dau thuong vi,false,TODO
+sunken_eyes,sunken eyes,mắt trũng sâu (dấu hiệu mất nước),mat trung;mat sau;hoc mat trung sau,false,TODO
+sweating,sweating,đổ mồ hôi nhiều,do mo hoi;mo hoi trom;va mo hoi;ra mo hoi nhieu,false,TODO
+swelled_lymph_nodes,swelled lymph nodes,nổi hạch sưng to,noi hach;sung hach;hach co;hach ben;noi hach dau,false,TODO
+swelling_joints,swelling joints,sưng phù các khớp,sung khop;phu khop;khop tay chan sung to,false,TODO
+swelling_of_stomach,swelling of stomach,chướng bụng to (cổ trướng),bung to;chuong to bung;co truong;bung phinh to,false,TODO
+swollen_blood_vessels,swollen blood vessels,nổi mạch máu ngoằn ngoèo,noi mach mau;gan xanh ngoan ngoeo;noi tinh mach;gian tinh mach,false,TODO
+swollen_extremeties,swollen extremeties,sưng phù các đầu chi,phu dau chi;sung ngon tay;sung ngon chan;phu ban tay ban chan,false,TODO
+swollen_legs,swollen legs,phù chân (sưng cẳng chân),phu chan;sung chan;sung phu hai chan;phu mat ca chan,false,TODO
+throat_irritation,throat irritation,ngứa rát cổ họng,rat hong;ngua hong;dau hong;vung hong kho chiu;rat co hong,false,TODO
+toxic_look_typhos,toxic look typhos,bộ mặt nhiễm trùng nhiễm độc,ve mat nhiem trung;ve mat lu do;nhiem doc nhiem trung;bo mat typhos,false,TODO
+ulcers_on_tongue,ulcers on tongue,lở loét trên lưỡi,nhiet luoi;lo luoi;lo mieng;vet lo tren luoi,false,TODO
+unsteadiness,unsteadiness,bước đi không vững (loạng choạng),loang choang;di khong vung;chan nam da chan chieu;buoc hut,false,TODO
+visual_disturbances,visual disturbances,rối loạn thị giác nhìn lóa,nhin loa;nhin hinh chong chanh;roi loan thi giac;mat chop sang,false,TODO
+vomiting,vomiting,nôn mửa,non;non mua;oi;buon non non ra ngoai,false,TODO
+watering_from_eyes,watering from eyes,chảy nước mắt sống liên tục,chay nuoc mat;chay nuoc mat song;mat chay nuoc;chay ghen mat,false,TODO
+weakness_in_limbs,weakness in limbs,yếu liệt tay chân,yeu tay chan;moi tay chan;yeu chi;tay chan khong co suc,false,TODO
+weakness_of_one_body_side,weakness of one body side,yếu liệt nửa người,yeu nua nguoi;liet nua nguoi;tay chan mot ben yeu;liet tay chan mot ben,false,TODO
+weight_gain,weight gain,tăng cân bất thường,tang can;tang can nhanh;beo len bat thuong,false,TODO
+weight_loss,weight loss,sụt cân (giảm cân nhanh),sut can;giam can;sut can nhanh;gay di,false,TODO
+yellow_crust_ooze,yellow crust ooze,vảy tiết màu vàng rỉ dịch,ri dich vang;vay vang;dong vảy vang;chay dich vang,false,TODO
+yellow_urine,yellow urine,nước tiểu màu vàng đục,nuoc tieu vang;nuoc tieu duc;dai vang,false,TODO
+yellowing_of_eyes,yellowing of eyes,vàng mắt (củng mạc mắt vàng),vang mat;long trang vang;mat bi vang;cung mac vang,false,TODO
+yellowish_skin,yellowish skin,da vàng (vàng da),da vang;vang da;da vang vot;da sam vang,false,TODO
