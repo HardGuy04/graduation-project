@@ -189,7 +189,15 @@ class SymptomExtractor:
             # 3. If clause contained substantive words but matched nothing
             if not matched_in_clause:
                 # Filter out pure clinical stopwords/filler words
-                filler_words = {"benh nhan", "kham", "than phien", "ngay thu", "khoang", "thay", "bi"}
+                filler_words = {
+                    "benh nhan",
+                    "kham",
+                    "than phien",
+                    "ngay thu",
+                    "khoang",
+                    "thay",
+                    "bi",
+                }
                 clause_words = [w for w in clause_unaccented.split() if w not in filler_words]
                 if len(clause_words) >= 2:
                     unrecognized.append(clause_cleaned)

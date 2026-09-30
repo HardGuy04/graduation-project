@@ -1,0 +1,459 @@
+# Golden set: 50 ca kiểm thử tiếng Việt tự nhiên lâm sàng
+# Trạng thái: cần bác sĩ xác nhận nhãn
+# Lưu ý: Golden set chỉ dùng để đánh giá mô hình, KHÔNG được dùng để huấn luyện.
+
+cases:
+  # 1-10: Nhóm Tai Mũi Họng & Cảm cúm hô hấp trên
+  - id: 1
+    input_text: "Đau họng, sốt nhẹ, ho khan từng cơn"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["throat_irritation", "mild_fever", "cough"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 2
+    input_text: "dau hong, so mui, nghet mui 3 ngay nay"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["throat_irritation", "runny_nose", "congestion"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 3
+    input_text: "dau hog, soot nhe, ho nhieu"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["throat_irritation", "mild_fever", "cough"]
+    is_red_flag: false
+    case_type: "typos"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 4
+    input_text: "Bệnh nhân không sốt, chỉ bị nghẹt mũi và chảy nước mũi trong"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["congestion", "runny_nose"]
+    is_red_flag: false
+    case_type: "negation"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 5
+    input_text: "Hắt hơi liên tục, chảy nước mũi, ngứa rát cổ họng kèm ớn lạnh"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["continuous_sneezing", "runny_nose", "throat_irritation", "chills"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 6
+    input_text: "chong mat khi quay dau, cam giac nha cua quay cuong xoay tron"
+    expected_disease: "(vertigo) Paroymsal  Positional Vertigo"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["spinning_movements", "loss_of_balance", "unsteadiness"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 7
+    input_text: "Chóng mặt dữ dội khi thay đổi tư thế nằm sang ngồi, buồn nôn, mất thăng bằng"
+    expected_disease: "(vertigo) Paroymsal  Positional Vertigo"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["spinning_movements", "nausea", "loss_of_balance"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 8
+    input_text: "choang vang, mat thang bang nhung khong sot, khong dau dau"
+    expected_disease: "(vertigo) Paroymsal  Positional Vertigo"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["loss_of_balance", "unsteadiness"]
+    is_red_flag: false
+    case_type: "negation"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 9
+    input_text: "Mất khứu giác hoàn toàn, không ngửi thấy mùi, ngạt mũi"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["loss_of_smell", "congestion"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 10
+    input_text: "Đau nhức căng tức vùng trán và xoang mặt, nghẹt mũi, khạc đờm đặc"
+    expected_disease: "Common Cold"
+    expected_specialty: "Tai Mũi Họng"
+    expected_symptoms: ["sinus_pressure", "congestion", "phlegm"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  # 11-20: Da liễu
+  - id: 11
+    input_text: "Ngứa da dữ dội, nổi mẩn đỏ, da bong tróc vảy"
+    expected_disease: "Fungal infection"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["itching", "skin_rash", "skin_peeling"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 12
+    input_text: "ngua ngay, mang da doi mau loang lo, noi mun nuoc"
+    expected_disease: "Fungal infection"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["itching", "dischromic_patches", "nodal_skin_eruptions"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 13
+    input_text: "Mặt nổi nhiều mụn bọc mủ sưng đỏ, mụn đầu đen rải rác"
+    expected_disease: "Acne"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["pus_filled_pimples", "blackheads", "scurring"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 14
+    input_text: "mat noi mun mu, khong sot, khong ngua"
+    expected_disease: "Acne"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["pus_filled_pimples"]
+    is_red_flag: false
+    case_type: "negation"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 15
+    input_text: "Vùng khuỷu tay bong tróc vảy trắng bạc như phấn, móng tay rỗ chấm nhỏ"
+    expected_disease: "Psoriasis"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["skin_peeling", "silver_like_dusting", "small_dents_in_nails"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 16
+    input_text: "da bong troc vay trang, mong tay giòn de gay, viem quanh mong"
+    expected_disease: "Psoriasis"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["skin_peeling", "silver_like_dusting", "inflammatory_nails"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 17
+    input_text: "Vết loét đỏ quanh mép mũi, đóng vảy tiết màu vàng rỉ dịch"
+    expected_disease: "Impetigo"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["red_sore_around_nose", "yellow_crust_ooze", "blister"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 18
+    input_text: "lo loet quanh mui mieng chay dich vang o tre nho"
+    expected_disease: "Impetigo"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["red_sore_around_nose", "yellow_crust_ooze"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 19
+    input_text: "Phát ban mụn nước rải rác toàn thân, sốt nhẹ, mệt mỏi"
+    expected_disease: "Chicken pox"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["blister", "skin_rash", "mild_fever", "fatigue"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 20
+    input_text: "Sau khi uống thuốc bị phát ban đỏ ngứa toàn thân, bong tróc da"
+    expected_disease: "Drug Reaction"
+    expected_specialty: "Da liễu"
+    expected_symptoms: ["skin_rash", "itching", "skin_peeling"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  # 21-28: Tim mạch & Red Flags cấp cứu
+  - id: 21
+    input_text: "Đau thắt ngực dữ dội lan ra vai trái, khó thở, vã mồ hôi lạnh"
+    expected_disease: "Heart attack"
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["chest_pain", "breathlessness", "sweating"]
+    is_red_flag: true
+    case_type: "red_flag"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 22
+    input_text: "dau that nguc du doi, tim dap nhanh, hoi hop danh trong nguc"
+    expected_disease: "Heart attack"
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["chest_pain", "fast_heart_rate", "palpitations"]
+    is_red_flag: true
+    case_type: "red_flag"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 23
+    input_text: "Đột ngột liệt nửa người bên phải, méo miệng, nói ngọng líu lưỡi"
+    expected_disease: "Paralysis (brain hemorrhage)"
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["weakness_of_one_body_side", "altered_sensorium", "slurred_speech"]
+    is_red_flag: true
+    case_type: "red_flag"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 24
+    input_text: "liet nua nguoi, mat thang bang, me sang bat tinh"
+    expected_disease: "Paralysis (brain hemorrhage)"
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["weakness_of_one_body_side", "altered_sensorium", "loss_of_balance"]
+    is_red_flag: true
+    case_type: "red_flag"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 25
+    input_text: "Đau nhức đầu vùng chẩm, chóng mặt hoa mắt, đo huyết áp cao"
+    expected_disease: "Hypertension "
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["headache", "dizziness", "loss_of_balance"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 26
+    input_text: "dau dau chong mat, khong dau nguc, khong kho tho"
+    expected_disease: "Hypertension "
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["headache", "dizziness"]
+    is_red_flag: false
+    case_type: "negation"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 27
+    input_text: "Nổi gân tĩnh mạch xanh ngoằn ngoèo ở bắp chân, phù chân, nặng mỏi hai chân"
+    expected_disease: "Varicose veins"
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["prominent_veins_on_calf", "swollen_legs", "cramps"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 28
+    input_text: "noi mach mau bap chan, sung chan, chuot rut ve dem"
+    expected_disease: "Varicose veins"
+    expected_specialty: "Tim mạch"
+    expected_symptoms: ["prominent_veins_on_calf", "swollen_legs", "cramps"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  # 29-35: Cơ xương khớp
+  - id: 29
+    input_text: "Đau nhức khớp gối hai bên, cứng khớp khi vận động buổi sáng"
+    expected_disease: "Osteoarthristis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["knee_pain", "movement_stiffness", "painful_walking"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 30
+    input_text: "dau khop goi, dau khi di lai buoc di, khop bi cung"
+    expected_disease: "Osteoarthristis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["knee_pain", "painful_walking", "movement_stiffness"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 31
+    input_text: "Sưng phù các khớp bàn tay, đau nhức khớp, cứng khớp buổi sáng"
+    expected_disease: "Arthritis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["swelling_joints", "joint_pain", "movement_stiffness"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 32
+    input_text: "dau khop, sung khop nhung chua bi bien dang khop"
+    expected_disease: "Arthritis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["joint_pain", "swelling_joints"]
+    is_red_flag: false
+    case_type: "negation"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 33
+    input_text: "Đau mỏi vùng cổ gáy, cứng cổ khó quay, yếu mỏi hai tay"
+    expected_disease: "Cervical spondylosis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["neck_pain", "stiff_neck", "weakness_in_limbs"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 34
+    input_text: "dau co gay, te bi moi tay chan, chong mat"
+    expected_disease: "Cervical spondylosis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["neck_pain", "weakness_in_limbs", "dizziness"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 35
+    input_text: "Đau khớp háng, đau buốt khi bước đi lại"
+    expected_disease: "Osteoarthristis"
+    expected_specialty: "Cơ xương khớp"
+    expected_symptoms: ["hip_joint_pain", "painful_walking"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  # 36-50: Nội tổng quát (Tiêu hóa, Gan mật, Nội tiết, Hô hấp, Truyền nhiễm)
+  - id: 36
+    input_text: "Ợ chua, ợ nóng rát cổ họng sau khi ăn no, đau thượng vị"
+    expected_disease: "GERD"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["acidity", "ulcers_on_tongue", "stomach_pain", "cough"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 37
+    input_text: "o nong, o chua, nong rat da day, khong non"
+    expected_disease: "GERD"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["acidity", "stomach_pain"]
+    is_red_flag: false
+    case_type: "negation"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 38
+    input_text: "Đau dạ dày thượng vị khi đói, ợ chua, buồn nôn, khó tiêu"
+    expected_disease: "Peptic ulcer diseae"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["stomach_pain", "acidity", "vomiting", "indigestion"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 39
+    input_text: "Tiêu chảy liên tục, nôn mửa, đau quặn bụng, sốt nhẹ mất nước"
+    expected_disease: "Gastroenteritis"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["diarrhoea", "vomiting", "sunken_eyes", "dehydration"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 40
+    input_text: "tieu chay nhieu lan, non mua, dau bung quan"
+    expected_disease: "Gastroenteritis"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["diarrhoea", "vomiting"]
+    is_red_flag: false
+    case_type: "unaccented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 41
+    input_text: "Đi ngoài ra máu tươi lẫn phân, đau rát khó chịu ở hậu môn khi đi cầu"
+    expected_disease: "Dimorphic hemmorhoids(piles)"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["bloody_stool", "pain_in_anal_region", "irritation_in_anus", "constipation"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 42
+    input_text: "Mệt mỏi kiệt sức, vàng da vàng mắt, nước tiểu sẫm màu, chán ăn"
+    expected_disease: "Jaundice"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["yellowish_skin", "yellowing_of_eyes", "dark_urine", "fatigue"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 43
+    input_text: "Vàng da, vàng mắt, chán ăn, buồn nôn, đau tức hạ sườn phải"
+    expected_disease: "Hepatitis B"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["yellowish_skin", "yellowing_of_eyes", "loss_of_appetite", "fatigue"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 44
+    input_text: "Tiền sử uống rượu nhiều năm, bụng chướng to cổ trướng, nôn nao vàng da"
+    expected_disease: "Alcoholic hepatitis"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["history_of_alcohol_consumption", "distention_of_abdomen", "fluid_overload", "yellowish_skin"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 45
+    input_text: "Tiểu nhiều lần cả ngày lẫn đêm, khát nước liên tục, sụt cân nhanh dù ăn nhiều"
+    expected_disease: "Diabetes "
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["polyuria", "increased_appetite", "weight_loss", "excessive_hunger"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 46
+    input_text: "Run tay, bướu cổ to, mắt lồi, sút cân nhanh, hồi hộp tim đập nhanh"
+    expected_disease: "Hyperthyroidism"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["enlarged_thyroid", "weight_loss", "restlessness", "fast_heart_rate"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 47
+    input_text: "Sợ lạnh, tăng cân bất thường, phù mặt và mi mắt, da khô táo bón"
+    expected_disease: "Hypothyroidism"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["cold_hands_and_feets", "weight_gain", "puffy_face_and_eyes", "constipation"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 48
+    input_text: "Vã mồ hôi, chân tay bủn rủn, đói cồn cào, hoa mắt chóng mặt run rẩy"
+    expected_disease: "Hypoglycemia"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["sweating", "headache", "nausea", "slurred_speech"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 49
+    input_text: "Sốt cao liên tục 39 độ, đau nhức hốc mắt, đau mỏi cơ toàn thân, nổi chấm xuất huyết đỏ"
+    expected_disease: "Dengue"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["high_fever", "pain_behind_the_eyes", "muscle_pain", "red_spots_over_body"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"
+
+  - id: 50
+    input_text: "Ho kéo dài khạc ra máu trong đờm, sốt nhẹ về chiều, sụt cân, ra mồ hôi trộm"
+    expected_disease: "Tuberculosis"
+    expected_specialty: "Nội tổng quát"
+    expected_symptoms: ["cough", "blood_in_sputum", "mild_fever", "weight_loss", "sweating"]
+    is_red_flag: false
+    case_type: "standard_accented"
+    review_status: "cần bác sĩ xác nhận nhãn"

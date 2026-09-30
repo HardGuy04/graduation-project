@@ -48,7 +48,9 @@ def normalize_text(raw_text: str) -> NormalizedText:
     text = text.lower()
 
     # 3. Remove control characters (except newline)
-    text = "".join(ch if ch == "\n" or not unicodedata.category(ch).startswith("C") else " " for ch in text)
+    text = "".join(
+        ch if ch == "\n" or not unicodedata.category(ch).startswith("C") else " " for ch in text
+    )
 
     # 4. Standardize punctuation: convert dashes, slashes, bullets into commas
     text = re.sub(r"[\t\r]+", " ", text)

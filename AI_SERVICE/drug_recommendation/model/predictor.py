@@ -1,0 +1,188 @@
+"""Predictor module for calibrated disease classification.
+
+Performs strict artifact validation (SHA-256 and sklearn version),
+vectorizes input symptoms, generates calibrated probability scores,
+and computes matched clinical features for explainability.
+"""
+
+import csv
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+import joblib
+import numpy as np
+import pandas as pd
+import sklearn
+
+from drug_recommendation.config import settings
+
+logger = logging.getLogger("predictor")
+
+
+class ModelIntegrityError(Exception):
+    """Raised when model artifact integrity check fails."""
+
+
+class DiseasePredictor:
+    """Loads calibrated classifier and infers disease probabilities."""
+
+    def __init__(self) -> None:
+        self.model: Any = None
+        self.metadata: dict[str, Any] = {}
+        self.features: list[str] = []
+        self.feature_to_idx: dict[str, int] = {}
+        self.classes: list[str] = []
+        self.model_version: str = "unknown"
+        self.is_loaded: bool = False
+        # Disease ID / Name -> set of canonical symptom IDs
+        self.disease_symptom_map: dict[str, set[str]] = {}
+        # Disease ID / Name -> KB metadata (name_vi, specialty, description)
+        self.disease_info_map: dict[str, dict[str, str]] = {}
+
+    def load(
+        self,
+        model_path: Path | None = None,
+        metadata_path: Path | None = None,
+        kb_dir: Path | None = None,
+    ) -> None:
+        """Load model artifact and metadata with strict verification."""
+        if model_path is None:
+            model_path = settings.MODEL_PATH
+        if metadata_path is None:
+            metadata_path = settings.METADATA_PATH
+        if kb_dir is None:
+            kb_dir = settings.KB_DIR
+
+        if not model_path.exists() or not metadata_path.exists():
+            raise FileNotFoundError(
+                f"Model artifact files missing: {model_path} or {metadata_path}"
+            )
+
+        # 1. Verify metadata
+        with open(metadata_path, encoding="utf-8") as f:
+            self.metadata = json.load(f)
+
+        saved_sklearn_version = self.metadata.get("sklearn_version")
+        current_sklearn_version = sklearn.__version__
+        if saved_sklearn_version != current_sklearn_version:
+            logger.warning(
+                f"Sklearn version mismatch: saved={saved_sklearn_version}, "
+                f"current={current_sklearn_version}."
+            )
+
+        saved_sha256 = self.metadata.get("raw_data_sha256")
+        expected_sha = "cc00c869b702c0c90eef3c1fb4d0b54f16965f8def2dec7e1bf91d0b76480ac3"
+        if saved_sha256 != expected_sha:
+            raise ModelIntegrityError(
+                f"Raw dataset SHA-256 mismatch in metadata! Expected {expected_sha}, got {saved_sha256}"
+            )
+
+        # 2. Load model
+        self.model = joblib.load(model_path)
+        self.features = self.metadata["features"]
+        self.feature_to_idx = {feat: idx for idx, feat in enumerate(self.features)}
+        self.classes = self.metadata["classes"]
+        self.model_version = self.metadata.get("model_version", "2026.10.0")
+
+        # 3. Load disease info from diseases.csv
+        dis_file = kb_dir / "diseases.csv"
+        if dis_file.exists():
+            with open(dis_file, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    d_id = r["id"].strip()
+                    d_en = r["name_en"].strip()
+                    info = {
+                        "name_vi": r.get("name_vi", d_en),
+                        "specialty": r.get("specialty", "Nội tổng quát"),
+                        "description": r.get("description", ""),
+                    }
+                    self.disease_info_map[d_id] = info
+                    self.disease_info_map[d_en] = info
+
+        # 4. Load canonical disease-symptom associations from processed train set for explainability
+        train_file = settings.PROCESSED_DATA_DIR / "train.csv"
+        if train_file.exists():
+            df_train = pd.read_csv(train_file)
+            for disease_name, group in df_train.groupby("prognosis"):
+                disease_name_str = str(disease_name).strip()
+                active_symptoms = set()
+                # Aggregate active symptoms across all examples of this disease
+                symptom_sums = group[self.features].sum(axis=0)
+                for sym_name, cnt in symptom_sums.items():
+                    if cnt > 0:
+                        active_symptoms.add(str(sym_name))
+                self.disease_symptom_map[disease_name_str] = active_symptoms
+
+        self.is_loaded = True
+        logger.info(
+            f"Successfully loaded DiseasePredictor version {self.model_version} "
+            f"({len(self.features)} features, {len(self.classes)} classes)"
+        )
+
+    def predict(
+        self,
+        symptom_ids: list[str],
+        symptom_name_map: dict[str, str] | None = None,
+        top_k: int = 3,
+    ) -> list[dict[str, Any]]:
+        """Predict top-k candidate diseases and return probability scores with matched symptoms."""
+        if not self.is_loaded or self.model is None:
+            raise RuntimeError("DiseasePredictor is not loaded")
+
+        if symptom_name_map is None:
+            symptom_name_map = {}
+
+        # 1. Vectorize input
+        x = np.zeros((1, len(self.features)), dtype=np.float32)
+        valid_input_symptoms: set[str] = set()
+        for s_id in symptom_ids:
+            if s_id in self.feature_to_idx:
+                idx = self.feature_to_idx[s_id]
+                x[0, idx] = 1.0
+                valid_input_symptoms.add(s_id)
+
+        # 2. Model inference
+        proba = self.model.predict_proba(x)[0]
+        model_classes = self.model.classes_
+
+        # 3. Sort descending by probability
+        ranked_indices = np.argsort(proba)[::-1][:top_k]
+
+        candidates: list[dict[str, Any]] = []
+        for idx in ranked_indices:
+            raw_disease = model_classes[idx]
+            raw_disease_str = str(raw_disease).strip()
+            prob_percent = int(round(float(proba[idx]) * 100))
+
+            # Retrieve disease display info
+            info = self.disease_info_map.get(
+                raw_disease_str,
+                {
+                    "name_vi": raw_disease_str,
+                    "specialty": "Nội tổng quát",
+                    "description": "",
+                },
+            )
+
+            # 4. Compute matchedSymptoms for explainability
+            disease_canonical_symptoms = self.disease_symptom_map.get(raw_disease_str, set())
+            matched_sym_ids = valid_input_symptoms.intersection(disease_canonical_symptoms)
+            matched_display_names = [
+                symptom_name_map.get(s, s.replace("_", " ")) for s in sorted(matched_sym_ids)
+            ]
+
+            candidates.append(
+                {
+                    "name": info["name_vi"],
+                    "raw_name": raw_disease_str,
+                    "probability": prob_percent,
+                    "description": info["description"],
+                    "specialty": info["specialty"],
+                    "matchedSymptoms": matched_display_names,
+                }
+            )
+
+        return candidates
