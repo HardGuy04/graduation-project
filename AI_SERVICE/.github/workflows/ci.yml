@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: AI_SERVICE
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: AI_SERVICE/requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run Ruff Lint
+        run: |
+          python -m ruff check .
+
+      - name: Run Mypy Type Check
+        run: |
+          python -m mypy drug_recommendation chatbot scripts main.py
+
+      - name: Run Pytest Suite
+        run: |
+          python -m pytest --cov=drug_recommendation --cov-report=term-missing tests/
