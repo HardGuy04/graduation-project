@@ -1,6 +1,6 @@
 {
   "model_version": "2026.10.0",
-  "created_at": "2026-09-30T05:26:33.831654+00:00",
+  "created_at": "2026-09-30T05:40:34.973386+00:00",
   "sklearn_version": "1.9.1",
   "raw_data_sha256": "cc00c869b702c0c90eef3c1fb4d0b54f16965f8def2dec7e1bf91d0b76480ac3",
   "selected_architecture": "BernoulliNB",
@@ -184,26 +184,26 @@
     "hepatitis A"
   ],
   "comparison_results": {
+    "MultinomialNB": {
+      "top1_accuracy": 0.9904874686716794,
+      "top3_accuracy": 0.9995,
+      "macro_f1": 0.9885356730302245,
+      "brier_score": 0.02203987042990246,
+      "latency_per_sample_ms": 0.03608647932311958
+    },
     "LogisticRegression": {
       "top1_accuracy": 0.9909924812030075,
       "top3_accuracy": 1.0,
       "macro_f1": 0.9909455341322072,
       "brier_score": 0.055911045602095547,
-      "latency_per_sample_ms": 0.05399465789363567
+      "latency_per_sample_ms": 0.045363982706157116
     },
     "BernoulliNB": {
       "top1_accuracy": 0.9934924812030076,
       "top3_accuracy": 0.9994987468671679,
       "macro_f1": 0.9923954118048517,
       "brier_score": 0.01492104074746094,
-      "latency_per_sample_ms": 0.06014977832263385
-    },
-    "RandomForest": {
-      "top1_accuracy": 0.9824824561403508,
-      "top3_accuracy": 1.0,
-      "macro_f1": 0.9781311240791292,
-      "brier_score": 0.07566049124177271,
-      "latency_per_sample_ms": 0.17052762481464634
+      "latency_per_sample_ms": 0.050120900000208225
     }
   },
   "validation_metrics": {
@@ -213,7 +213,7 @@
     "brier_score": 0.00452842331047944
   },
   "latency_ms": {
-    "p50": 7.335,
-    "p95": 10.315
+    "p50": 6.749,
+    "p95": 9.808
   }
 }

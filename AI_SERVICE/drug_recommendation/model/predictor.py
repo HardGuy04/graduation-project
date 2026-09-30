@@ -102,19 +102,27 @@ class DiseasePredictor:
                     self.disease_info_map[d_id] = info
                     self.disease_info_map[d_en] = info
 
-        # 4. Load canonical disease-symptom associations from processed train set for explainability
-        train_file = settings.PROCESSED_DATA_DIR / "train.csv"
-        if train_file.exists():
-            df_train = pd.read_csv(train_file)
-            for disease_name, group in df_train.groupby("prognosis"):
+        # 4. Load canonical disease-symptom associations for explainability
+        raw_training = settings.BASE_DIR / "dataset" / "Training.csv"
+        if raw_training.exists():
+            df_raw = pd.read_csv(raw_training).drop(columns=["Unnamed: 133"], errors="ignore")
+            for disease_name, group in df_raw.groupby("prognosis"):
                 disease_name_str = str(disease_name).strip()
-                active_symptoms = set()
-                # Aggregate active symptoms across all examples of this disease
-                symptom_sums = group[self.features].sum(axis=0)
-                for sym_name, cnt in symptom_sums.items():
-                    if cnt > 0:
-                        active_symptoms.add(str(sym_name))
-                self.disease_symptom_map[disease_name_str] = active_symptoms
+                row = group.iloc[0].drop("prognosis", errors="ignore")
+                active = {str(c).strip().replace(" ", "_") for c, v in row.items() if v == 1}
+                self.disease_symptom_map[disease_name_str] = active
+        else:
+            train_file = settings.PROCESSED_DATA_DIR / "train.csv"
+            if train_file.exists():
+                df_train = pd.read_csv(train_file)
+                for disease_name, group in df_train.groupby("prognosis"):
+                    disease_name_str = str(disease_name).strip()
+                    threshold = len(group) * 0.3
+                    symptom_sums = group[self.features].sum(axis=0)
+                    active = {
+                        str(sym_name) for sym_name, cnt in symptom_sums.items() if cnt >= threshold
+                    }
+                    self.disease_symptom_map[disease_name_str] = active
 
         self.is_loaded = True
         logger.info(
@@ -148,14 +156,25 @@ class DiseasePredictor:
         proba = self.model.predict_proba(x)[0]
         model_classes = self.model.classes_
 
-        # 3. Sort descending by probability
-        ranked_indices = np.argsort(proba)[::-1][:top_k]
+        # 3. Compute symptom matches for all classes to eliminate zero-match hallucinations
+        scored_candidates = []
+        for idx, raw_disease in enumerate(model_classes):
+            raw_disease_str = str(raw_disease).strip()
+            disease_canonical_symptoms = self.disease_symptom_map.get(raw_disease_str, set())
+            matched_sym_ids = valid_input_symptoms.intersection(disease_canonical_symptoms)
+            matched_count = len(matched_sym_ids)
+            scored_candidates.append(
+                (idx, raw_disease_str, float(proba[idx]), matched_count, matched_sym_ids)
+            )
+
+        # Sort: first by whether matched_count > 0, second by probability descending
+        scored_candidates.sort(key=lambda item: (item[3] > 0, item[2]), reverse=True)
 
         candidates: list[dict[str, Any]] = []
-        for idx in ranked_indices:
-            raw_disease = model_classes[idx]
-            raw_disease_str = str(raw_disease).strip()
-            prob_percent = int(round(float(proba[idx]) * 100))
+        for _idx, raw_disease_str, prob_val, _matched_count, matched_sym_ids in scored_candidates[
+            :top_k
+        ]:
+            prob_percent = int(round(prob_val * 100))
 
             # Retrieve disease display info
             info = self.disease_info_map.get(
@@ -167,9 +186,6 @@ class DiseasePredictor:
                 },
             )
 
-            # 4. Compute matchedSymptoms for explainability
-            disease_canonical_symptoms = self.disease_symptom_map.get(raw_disease_str, set())
-            matched_sym_ids = valid_input_symptoms.intersection(disease_canonical_symptoms)
             matched_display_names = [
                 symptom_name_map.get(s, s.replace("_", " ")) for s in sorted(matched_sym_ids)
             ]

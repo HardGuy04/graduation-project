@@ -45,7 +45,7 @@ fluid_overload,fluid overload,ứ dịch phù nề toàn thân,u dich;phu toan t
 fluid_overload_1,fluid overload 1,fluid overload 1,fluid overload 1,false,TODO
 foul_smell_of_urine,foul smell of urine,nước tiểu có mùi hôi nồng,nuoc tieu hoi;mui nuoc tieu nong;nuoc tieu mui kham;tieu mui la,false,TODO
 headache,headache,đau đầu (nhức đầu),dau dau;nhuc dau;dau buot dau;dau nua dau;dau dau am i,false,TODO
-high_fever,high fever,sốt cao,sot cao;sot nong;nhiet do cao;sot tren 38 do;sot cao lien tuc,false,TODO
+high_fever,high fever,sốt cao,sot;bi sot;sot cao;sot nong;nhiet do cao;sot tren 38 do;sot cao lien tuc,false,TODO
 hip_joint_pain,hip joint pain,đau khớp háng,dau khop hang;nhuc khop hang;dau vung hang,false,TODO
 history_of_alcohol_consumption,history of alcohol consumption,tiền sử nghiện rượu bia,uong ruou;uong ruou bia thuong xuyen;nghien ruou;uong bia nhieu,false,TODO
 increased_appetite,increased appetite,thèm ăn nhiều bất thường,them an;an nhieu;luc nao cung them an;an khong no,false,TODO

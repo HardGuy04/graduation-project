@@ -45,7 +45,7 @@ fluid_overload,ứ dịch phù nề toàn thân,fluid overload,Toàn thân,4,u d
 fluid_overload_1,fluid overload 1,fluid overload 1,Toàn thân,3,fluid overload 1,dataset/Symptom-severity.csv,false
 foul_smell_of_urine,nước tiểu có mùi hôi nồng,foul smell of urine,Thận - Tiết niệu,3,nuoc tieu hoi;mui nuoc tieu nong;nuoc tieu mui kham;tieu mui la,dataset/Symptom-severity.csv,false
 headache,đau đầu (nhức đầu),headache,Thần kinh,3,dau dau;nhuc dau;dau buot dau;dau nua dau;dau dau am i,dataset/Symptom-severity.csv,false
-high_fever,sốt cao,high fever,Toàn thân,7,sot cao;sot nong;nhiet do cao;sot tren 38 do;sot cao lien tuc,dataset/Symptom-severity.csv,false
+high_fever,sốt cao,high fever,Toàn thân,7,sot;bi sot;sot cao;sot nong;nhiet do cao;sot tren 38 do;sot cao lien tuc,dataset/Symptom-severity.csv,false
 hip_joint_pain,đau khớp háng,hip joint pain,Cơ xương khớp,2,dau khop hang;nhuc khop hang;dau vung hang,dataset/Symptom-severity.csv,false
 history_of_alcohol_consumption,tiền sử nghiện rượu bia,history of alcohol consumption,Toàn thân,5,uong ruou;uong ruou bia thuong xuyen;nghien ruou;uong bia nhieu,dataset/Symptom-severity.csv,false
 increased_appetite,thèm ăn nhiều bất thường,increased appetite,Tiêu hóa,5,them an;an nhieu;luc nao cung them an;an khong no,dataset/Symptom-severity.csv,false

@@ -17,11 +17,10 @@ import numpy as np
 import pandas as pd
 import sklearn
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import StratifiedKFold
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 
 from drug_recommendation.config import settings
 
@@ -61,6 +60,7 @@ class ModelTrainer:
     def __init__(self, random_state: int = 42) -> None:
         self.random_state = random_state
         self.models_to_compare = {
+            "MultinomialNB": MultinomialNB(alpha=0.5),
             "LogisticRegression": LogisticRegression(
                 C=1.0,
                 max_iter=500,
@@ -68,12 +68,6 @@ class ModelTrainer:
                 random_state=self.random_state,
             ),
             "BernoulliNB": BernoulliNB(alpha=0.5),
-            "RandomForest": RandomForestClassifier(
-                n_estimators=100,
-                max_depth=15,
-                class_weight="balanced",
-                random_state=self.random_state,
-            ),
         }
 
     def evaluate_cv(
