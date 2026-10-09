@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed": "node database/seed.js"
+    "seed": "node database/seed.js",
+    "db:check": "node database/check.js",
+    "test": "node --test --test-concurrency=1 \"tests/*.test.js\"",
+    "test:cleanup": "node tests/cleanup.js"
   },
   "keywords": [],
   "author": "",

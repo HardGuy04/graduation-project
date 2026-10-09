@@ -1,35 +1,49 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Auth middleware — verify JWT từ header Authorization, gắn req.user
-// ─────────────────────────────────────────────────────────────────────────────
-const { verifyAccessToken } = require('../utils/jwt');
-const { fail } = require('../utils/response');
+// authenticate — xác thực Bearer access token, gắn req.user = { id, role, doctorId, patientId, adminId }
+import pool from '../config/db.js';
+import AppError from '../utils/AppError.js';
+import { verifyAccessToken } from '../utils/jwt.js';
+import { USER_STATUS } from '../utils/constants.js';
 
-const authenticate = (req, res, next) => {
+export default async function authenticate(req, _res, next) {
+  const header = req.headers.authorization || '';
+  const [scheme, token] = header.split(' ');
+  if (scheme !== 'Bearer' || !token) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập để tiếp tục');
+  }
+
+  let payload;
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return fail(res, 'Vui lòng đăng nhập để tiếp tục', 401);
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyAccessToken(token);
-
-    // Gắn thông tin user vào request để các middleware/controller sau dùng
-    req.user = {
-      id: decoded.id,
-      role: decoded.role,
-    };
-
-    next();
+    payload = verifyAccessToken(token);
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
-      return fail(res, 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại', 401);
+      throw new AppError(401, 'TOKEN_EXPIRED', 'Phiên đăng nhập đã hết hạn');
     }
-    if (err.name === 'JsonWebTokenError') {
-      return fail(res, 'Token không hợp lệ', 401);
-    }
-    return fail(res, 'Xác thực thất bại', 401);
+    throw new AppError(401, 'INVALID_TOKEN', 'Token không hợp lệ');
   }
-};
 
-module.exports = authenticate;
+  // Đọc lại trạng thái từ DB để tài khoản bị khóa mất quyền ngay, không phải chờ token hết hạn;
+  // vai trò cũng lấy từ DB chứ không tin hoàn toàn vào token.
+  const [rows] = await pool.query(
+    `SELECT u.id, u.role, u.status, d.id AS doctorId, p.id AS patientId, a.id AS adminId
+       FROM users u
+       LEFT JOIN doctor d        ON d.user_id = u.id
+       LEFT JOIN patient p       ON p.user_id = u.id
+       LEFT JOIN admin_profile a ON a.user_id = u.id
+      WHERE u.id = ?`,
+    [Number(payload.sub)],
+  );
+  const user = rows[0];
+  if (!user) throw new AppError(401, 'INVALID_TOKEN', 'Token không hợp lệ');
+  if (user.status !== USER_STATUS.ACTIVE) {
+    throw new AppError(403, 'ACCOUNT_LOCKED', 'Tài khoản đã bị khóa, vui lòng liên hệ phòng khám');
+  }
+
+  req.user = {
+    id: user.id,
+    role: user.role,
+    doctorId: user.doctorId,
+    patientId: user.patientId,
+    adminId: user.adminId,
+  };
+  next();
+}

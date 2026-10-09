@@ -1,9 +1,18 @@
-// dotenv phải load ĐẦU TIÊN để biến môi trường sẵn sàng trước khi db.js import
-import 'dotenv/config';
+// env.js nạp dotenv và kiểm tra cấu hình trước khi bất kỳ module nào dùng tới
+import env from './config/env.js';
 import app from './app.js';
+import pool from './config/db.js';
+import { startReminderJob } from './services/notification.service.js';
 
-const PORT = Number(process.env.PORT || 5000);
-
-app.listen(PORT, () => {
-  console.log(`MediCare Hub API — http://localhost:${PORT}`);
+const server = app.listen(env.PORT, () => {
+  console.log(`MediCare Hub API — http://localhost:${env.PORT}`);
+  startReminderJob();
 });
+
+function shutdown() {
+  server.close(() => {
+    pool.end().finally(() => process.exit(0));
+  });
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

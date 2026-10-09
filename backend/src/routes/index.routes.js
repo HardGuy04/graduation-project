@@ -1,24 +1,31 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Router tổng hợp — gom tất cả module routes vào /api/*
-// ─────────────────────────────────────────────────────────────────────────────
-const { Router } = require('express');
-const authRoutes = require('./auth.routes');
-const adminRoutes = require('./admin.routes');
-const doctorRoutes = require('./doctor.routes');
-const patientRoutes = require('./patient.routes');
-const specialtyRoutes = require('./specialty.routes');
-const chatbotRoutes = require('./chatbot.routes');
+// Router tổng — gom các module vào /api/*
+import { Router } from 'express';
+import pool from '../config/db.js';
+import authRoutes from './auth.routes.js';
+import specialtyRoutes from './specialty.routes.js';
+import doctorRoutes, { publicDoctorRouter } from './doctor.routes.js';
+import patientRoutes from './patient.routes.js';
+import adminRoutes from './admin.routes.js';
+import appointmentRoutes from './appointment.routes.js';
+import paymentRoutes from './payment.routes.js';
 
 const router = Router();
 
-// Public routes
-router.use('/auth', authRoutes);             // POST /api/auth/login, /register, ...
-router.use('/specialties', specialtyRoutes); // GET  /api/specialties
+router.get('/health', async (_req, res) => {
+  await pool.query('SELECT 1');
+  res.json({ data: { status: 'ok', time: new Date().toISOString() } });
+});
 
-// Protected routes (từng module tự gắn middleware auth + role bên trong)
-router.use('/admin', adminRoutes);           // /api/admin/*
-router.use('/doctor', doctorRoutes);         // /api/doctor/*
-router.use('/patient', patientRoutes);       // /api/patient/*
-router.use('/chatbot', chatbotRoutes);       // /api/chatbot/*
+// Công khai
+router.use('/auth', authRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/specialties', specialtyRoutes);
+router.use('/doctors', publicDoctorRouter);
 
-module.exports = router;
+// Theo vai trò (mỗi router tự gắn authenticate + authorize)
+router.use('/doctor', doctorRoutes);
+router.use('/patient', patientRoutes);
+router.use('/admin', adminRoutes);
+router.use('/appointments', appointmentRoutes);
+
+export default router;

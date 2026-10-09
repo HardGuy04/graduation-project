@@ -1,56 +1,41 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants — roles, appointment/invoice/room statuses, etc.
-// Đồng bộ với frontend/src/utils/constants.js và database/schema.sql
-// ─────────────────────────────────────────────────────────────────────────────
+// Giá trị enum lấy đúng từ database thật (xem database/schema.sql) — viết HOA.
 
-const ROLES = {
-  ADMIN: 'admin',
-  DOCTOR: 'doctor',
-  PATIENT: 'patient',
-};
+export const ROLES = Object.freeze({ ADMIN: 'ADMIN', DOCTOR: 'DOCTOR', PATIENT: 'PATIENT' });
 
-const APPOINTMENT_STATUS = {
-  PENDING: 'pending',
-  CONFIRMED: 'confirmed',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-  REJECTED: 'rejected',
-};
+export const USER_STATUS = Object.freeze({ ACTIVE: 'ACTIVE', LOCKED: 'LOCKED', DISABLED: 'DISABLED' });
 
-const INVOICE_STATUS = {
-  UNPAID: 'unpaid',
-  PAID: 'paid',
-  REFUNDED: 'refunded',
-};
+export const GENDERS = Object.freeze(['MALE', 'FEMALE', 'OTHER']);
 
-const ROOM_STATUS = {
-  AVAILABLE: 'available',
-  IN_USE: 'in_use',
-  MAINTENANCE: 'maintenance',
-};
+export const APPT_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  CHECKED_IN: 'CHECKED_IN',
+  DONE: 'DONE',
+  CANCELLED: 'CANCELLED',
+  NO_SHOW: 'NO_SHOW',
+});
 
-const USER_STATUS = {
-  ACTIVE: 'active',
-  LOCKED: 'locked',
-  DISABLED: 'disabled',
-};
+// Lịch CANCELLED/NO_SHOW giải phóng slot (cột sinh active_*_slot = NULL) nên không tính khi kiểm tra chồng lấn
+export const INACTIVE_APPT_STATUSES = Object.freeze([APPT_STATUS.CANCELLED, APPT_STATUS.NO_SHOW]);
 
-const NOTIFICATION_TYPES = {
-  APPOINTMENT_CONFIRMED: 'appointment_confirmed',
-  APPOINTMENT_REJECTED: 'appointment_rejected',
-  APPOINTMENT_CANCELLED: 'appointment_cancelled',
-};
+export const ROOM_STATUS = Object.freeze(['AVAILABLE', 'MAINTENANCE', 'INACTIVE']);
 
-// Ngày công chuẩn / tháng (dùng tính lương)
-const STANDARD_WORK_DAYS = 26;
+export const SCHEDULE_STATUS = Object.freeze(['ACTIVE', 'INACTIVE']);
 
-module.exports = {
-  ROLES,
-  APPOINTMENT_STATUS,
-  INVOICE_STATUS,
-  ROOM_STATUS,
-  USER_STATUS,
-  NOTIFICATION_TYPES,
-  STANDARD_WORK_DAYS,
-};
+export const PAYMENT_STATUS = Object.freeze({ UNPAID: 'UNPAID', PAID: 'PAID', REFUNDED: 'REFUNDED' });
+
+export const PAYMENT_METHODS = Object.freeze(['CASH', 'CARD', 'TRANSFER', 'WALLET']);
+
+export const WALLET_TX_TYPE = Object.freeze({ TOPUP: 'TOPUP', PAYMENT: 'PAYMENT', REFUND: 'REFUND' });
+
+// notification.type là varchar(30)
+export const NOTIFICATION_TYPE = Object.freeze({
+  APPOINTMENT_CREATED: 'APPOINTMENT_CREATED',
+  APPOINTMENT_CONFIRMED: 'APPOINTMENT_CONFIRMED',
+  APPOINTMENT_CANCELLED: 'APPOINTMENT_CANCELLED',
+  APPOINTMENT_NO_SHOW: 'APPOINTMENT_NO_SHOW',
+  APPOINTMENT_ROOM_CHANGED: 'APPOINTMENT_ROOM_CHANGED',
+  APPOINTMENT_REMINDER: 'APPOINTMENT_REMINDER',
+  INVOICE_CREATED: 'INVOICE_CREATED',
+  INVOICE_PAID: 'INVOICE_PAID',
+});

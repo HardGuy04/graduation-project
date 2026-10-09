@@ -1,46 +1,23 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Response helper — thống nhất format trả về { success, message, data }
-// Giữ đúng contract đã dùng trong mockApi.js của frontend
-// ─────────────────────────────────────────────────────────────────────────────
+// Định dạng phản hồi thành công thống nhất cho web và mobile:
+//   { data }                                   — một đối tượng
+//   { data: [...], pagination: {...} }         — danh sách có phân trang
+// Lỗi do errorHandler trả: { error: { code, message } }
 
-/**
- * Trả response thành công
- */
-const ok = (res, data = null, message = 'Thành công', statusCode = 200) => {
-  return res.status(statusCode).json({
-    success: true,
-    message,
-    data,
-  });
-};
+export function ok(res, data, status = 200) {
+  return res.status(status).json({ data });
+}
 
-/**
- * Trả response lỗi
- */
-const fail = (res, message = 'Đã có lỗi xảy ra', statusCode = 400, errors = null) => {
-  const body = {
-    success: false,
-    message,
-  };
-  if (errors) body.errors = errors;
-  return res.status(statusCode).json(body);
-};
+export function created(res, data) {
+  return ok(res, data, 201);
+}
 
-/**
- * Trả response phân trang (mở rộng cho các API list)
- */
-const paginate = (res, { rows, total, page, limit }, message = 'Thành công') => {
+export function paginated(res, rows, { page, limit, total }) {
   return res.status(200).json({
-    success: true,
-    message,
     data: rows,
-    pagination: {
-      total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / limit),
-    },
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
-};
+}
 
-module.exports = { ok, fail, paginate };
+export function noContent(res) {
+  return res.status(204).end();
+}

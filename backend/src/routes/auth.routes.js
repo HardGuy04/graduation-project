@@ -1,25 +1,18 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Auth routes — POST /api/auth/login, /register, /change-password
-// ─────────────────────────────────────────────────────────────────────────────
-const { Router } = require('express');
-const authenticate = require('../middlewares/auth.middleware');
+// /api/auth/*
+import { Router } from 'express';
+import authenticate from '../middlewares/auth.middleware.js';
+import * as c from '../controllers/auth.controller.js';
 
 const router = Router();
 
-// TODO: Phase 1 — kết nối auth.controller.js
-// POST /api/auth/login
-router.post('/login', (req, res) => {
-  res.json({ success: true, message: 'Auth route placeholder — sẽ triển khai ở Phase 1' });
-});
+router.post('/register', c.register);
+router.post('/login', c.login);
+router.post('/refresh', c.refresh);
+// Không yêu cầu access token: access token có thể đã hết hạn, giữ refresh token là đủ chứng minh
+router.post('/logout', c.logout);
 
-// POST /api/auth/register
-router.post('/register', (req, res) => {
-  res.json({ success: true, message: 'Register route placeholder' });
-});
+router.get('/me', authenticate, c.getMe);
+router.patch('/me', authenticate, c.updateMe);
+router.post('/change-password', authenticate, c.changePassword);
 
-// POST /api/auth/change-password (cần đăng nhập)
-router.post('/change-password', authenticate, (req, res) => {
-  res.json({ success: true, message: 'Change password route placeholder' });
-});
-
-module.exports = router;
+export default router;

@@ -1,27 +1,10 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Specialty routes — GET /api/specialties (public)
-// ─────────────────────────────────────────────────────────────────────────────
-const { Router } = require('express');
-const { ok, fail } = require('../utils/response');
-const pool = require('../config/db');
+// /api/specialties — công khai (thêm/sửa/xóa nằm ở /api/admin/specialties)
+import { Router } from 'express';
+import * as c from '../controllers/specialty.controller.js';
 
 const router = Router();
 
-// GET /api/specialties — danh sách chuyên khoa (public, không cần auth)
-router.get('/', async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT s.*, COUNT(d.id) AS doctorCount
-      FROM specialty s
-      LEFT JOIN doctor d ON d.specialty_id = s.id
-        AND d.user_id IN (SELECT id FROM users WHERE status = 'active' AND role = 'doctor')
-      GROUP BY s.id
-      ORDER BY s.id
-    `);
-    return ok(res, rows);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get('/', c.list);
+router.get('/:id', c.get);
 
-module.exports = router;
+export default router;
