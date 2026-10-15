@@ -91,7 +91,7 @@ def test_predict_disease_success_contract() -> None:
                     "gender": "male",
                     "allergies": [],
                 },
-                "topK": 3,
+                "topK": 5,
             },
         )
         assert response.status_code == 200
@@ -111,7 +111,8 @@ def test_predict_disease_success_contract() -> None:
 
         assert data["disclaimer"] == MANDATORY_DISCLAIMER
         assert len(data["recognizedSymptoms"]) >= 2
-        assert len(data["diseases"]) <= 3
+        assert len(data["diseases"]) <= 5
+        assert len(data["diseases"]) >= 1
 
         # Validate disease item structure
         for dis in data["diseases"]:
@@ -127,6 +128,8 @@ def test_predict_disease_success_contract() -> None:
             assert "probability" in med
             assert 0 <= med["probability"] <= 100
             assert "usage" in med
+            assert "dosage" in med
+            assert "instruction" in med
             assert "forDiseases" in med
             assert "prescriptionRequired" in med
             assert "warnings" in med

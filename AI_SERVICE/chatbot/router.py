@@ -6,11 +6,19 @@ PLACEHOLDER - owned by chatbot owner, replace entirely.
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-router = APIRouter(prefix="/internal/chatbot", tags=["chatbot"])
+router = APIRouter(prefix="/internal/chatbot", tags=["Chatbot Service"])
 
 
-@router.post("", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-@router.post("/", status_code=status.HTTP_501_NOT_IMPLEMENTED)
+@router.post(
+    "",
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    summary="Tiếp nhận hội thoại Chatbot bệnh nhân (Placeholder)",
+)
+@router.post(
+    "/",
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    summary="Tiếp nhận hội thoại Chatbot bệnh nhân (Placeholder)",
+)
 async def internal_chatbot_stub() -> JSONResponse:
     # PLACEHOLDER - owned by chatbot owner, replace entirely
     return JSONResponse(

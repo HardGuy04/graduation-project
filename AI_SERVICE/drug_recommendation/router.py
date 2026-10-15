@@ -17,7 +17,7 @@ from drug_recommendation.schemas import (
 
 logger = logging.getLogger("ai_service.router")
 
-router = APIRouter(prefix="/internal", tags=["drug_recommendation"])
+router = APIRouter(prefix="/internal", tags=["Clinical Decision Support (CDSS)"])
 
 
 def verify_internal_key(x_internal_key: str | None) -> bool:
@@ -30,10 +30,19 @@ def verify_internal_key(x_internal_key: str | None) -> bool:
 @router.post(
     "/predict-disease",
     response_model=DiseasePredictionResponse,
+    summary="Chẩn đoán bệnh lý, đề xuất phác đồ thuốc & tư vấn lối sống",
+    description="""
+API hạt nhân phân tích y khoa hỗ trợ bác sĩ và bệnh nhân:
+1. **Trích xuất triệu chứng NLP**: Nhận diện triệu chứng tiếng Việt tự nhiên (hỗ trợ cả có dấu và không dấu), tự động loại trừ triệu chứng phủ định (*"không sốt", "chưa từng nôn"*).
+2. **Cảnh báo dấu hiệu nguy hiểm (Red Flags)**: Phát hiện và cảnh báo sớm các triệu chứng báo động đỏ cần cấp cứu.
+3. **Mô hình học máy phân loại bệnh**: Dự đoán xác suất và xếp hạng các bệnh lý phù hợp nhất.
+4. **Khuyến nghị thuốc & An toàn**: Đề xuất thuốc theo phác đồ, kèm liều lượng (`dosage`), hướng dẫn (`instruction`), tự động rà soát dị ứng và chống chỉ định.
+5. **Tư vấn lối sống toàn diện**: Cung cấp chế độ dinh dưỡng (`diets`), phòng ngừa (`precautions`) và vận động (`workouts`).
+""",
     responses={
-        401: {"model": ErrorResponse, "description": "Invalid or missing internal key"},
-        422: {"model": ErrorResponse, "description": "Validation error"},
-        503: {"model": ErrorResponse, "description": "Model not loaded yet"},
+        401: {"model": ErrorResponse, "description": "Sai hoặc thiếu Header X-Internal-Key"},
+        422: {"model": ErrorResponse, "description": "Dữ liệu đầu vào không hợp lệ"},
+        503: {"model": ErrorResponse, "description": "Mô hình AI chưa nạp hoặc đang khởi động"},
     },
 )
 async def predict_disease(
@@ -88,13 +97,13 @@ async def predict_disease(
                 "data": result_data.model_dump(),
             },
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error during disease prediction")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "success": False,
                 "message": "Lỗi nội bộ khi xử lý gợi ý bệnh",
-                "error": str(type(e).__name__),
+                "error": "InternalServerError",
             },
         )

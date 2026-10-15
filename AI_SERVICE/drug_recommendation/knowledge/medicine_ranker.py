@@ -151,11 +151,25 @@ class MedicineRanker:
                     med_for_diseases[m_id] = set()
                 med_for_diseases[m_id].add(d_name)
 
-        # 4. Rank medicines by score descending
-        sorted_med_ids = sorted(med_scores.keys(), key=lambda m: med_scores[m], reverse=True)
+        # 4. Rank medicines: ensure each candidate disease has corresponding treatment medicines
+        selected_med_ids: set[str] = set()
+        for d_id in disease_weights:
+            assocs = kb_loader.disease_medicines.get(d_id, [])
+            sorted_assocs = sorted(assocs, key=lambda a: a.get("weight", 0.0), reverse=True)
+            for a in sorted_assocs[:2]:
+                selected_med_ids.add(a["medicine_id"])
+
+        sorted_all_med_ids = sorted(med_scores.keys(), key=lambda m: med_scores[m], reverse=True)
+        max_meds = max(top_k, len(disease_weights) * 2)
+        for m_id in sorted_all_med_ids:
+            selected_med_ids.add(m_id)
+            if len(selected_med_ids) >= max_meds:
+                break
+
+        sorted_med_ids = sorted(selected_med_ids, key=lambda m: med_scores.get(m, 0.0), reverse=True)
 
         results: list[MedicineItem] = []
-        for m_id in sorted_med_ids[:top_k]:
+        for m_id in sorted_med_ids:
             med_info = kb_loader.medicines_by_id.get(m_id)
             if not med_info:
                 continue
@@ -172,6 +186,8 @@ class MedicineRanker:
                     name=med_info["name"],
                     probability=score_percent,
                     usage=med_info["usage"],
+                    dosage=med_info.get("dosage", ""),
+                    instruction=med_info.get("instruction", ""),
                     forDiseases=sorted(med_for_diseases.get(m_id, set())),
                     prescriptionRequired=med_info["prescription_required"],
                     warnings=warnings,

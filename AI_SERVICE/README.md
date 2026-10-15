@@ -74,42 +74,39 @@ Kích thước mô hình dự kiến (Calibrated Logistic Regression / Random Fo
 
 ---
 
-## 5. Hướng dẫn Khởi chạy Nhanh
+## 5. Hướng dẫn Khởi chạy Thủ công bằng Dòng lệnh (CLI)
 
-### Cài đặt môi trường
 ```bash
-# Tạo và kích hoạt virtual environment
-python -m venv .venv
-# Trên Windows:
-.venv\Scripts\activate
-# Trên Linux/macOS:
-source .venv/bin/activate
+# 1. Kích hoạt môi trường ảo
+.venv\Scripts\activate      # Windows (PowerShell/CMD)
+source .venv/bin/activate    # Linux/macOS
 
-# Cài đặt thư viện dev
-pip install -r requirements-dev.txt
-```
-
-### Chạy kiểm tra chất lượng mã nguồn
-```bash
-# Linting
+# 2. Chạy toàn bộ kiểm thử và kiểm tra chất lượng mã nguồn
+pytest
 ruff check .
+mypy drug_recommendation/
 
-# Type checking
-mypy drug_recommendation chatbot scripts main.py
-
-# Unit tests
-pytest tests/
-```
-
-### Chạy Service
-```bash
+# 3. Khởi chạy máy chủ AI_SERVICE
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Kiểm tra endpoint sức khỏe:
-```bash
-curl http://localhost:8000/health
-```
-Kết quả mong đợi:
-```json
-{"status":"ok","model_loaded":false,"model_version":null}
-```
+
+### Kiểm tra hoạt động dịch vụ:
+* **Kiểm tra tình trạng sẵn sàng của mô hình (Health Check):**
+  ```bash
+  curl http://localhost:8000/health
+  ```
+  *Kết quả:*
+  ```json
+  {"status":"ok","model_loaded":true,"model_version":"2026.10.0"}
+  ```
+
+* **Giao diện Swagger tương tác trực tiếp:**
+  Mở trình duyệt truy cập: `http://localhost:8000/docs`
+
+* **Chạy thử chẩn đoán lâm sàng bằng cURL:**
+  ```bash
+  curl -X POST http://localhost:8000/internal/predict-disease \
+    -H "Content-Type: application/json" \
+    -H "X-Internal-Key: dev-internal-secret-key-change-in-prod" \
+    -d "{\"symptoms\":\"bệnh nhân sốt cao, đau đầu, đau nhức khớp, không nôn mửa\",\"patientInfo\":{\"age\":28,\"gender\":\"Nam\"}}"
+  ```

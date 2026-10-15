@@ -16,6 +16,7 @@ from drug_recommendation.schemas import (
     DiseaseItem,
     DiseasePredictionData,
     DiseasePredictionRequest,
+    LifestyleAdvice,
 )
 
 logger = logging.getLogger("ai_service.drug_service")
@@ -127,52 +128,51 @@ class DrugService:
                 modelVersion=self.model_version or "unknown",
             )
 
-        # 4. Predict disease candidates
+        # 4. Predict disease candidates (guarantee at least 5 candidates if available)
+        top_k = max(request.topK or 5, 5)
         candidates = self.predictor.predict(
             symptom_ids=recognized_ids,
             symptom_name_map=self.extractor.symptom_names,
-            top_k=request.topK or 3,
+            top_k=top_k,
         )
 
-        # 5. Clinical Fallback Rule 2: Low confidence (< 30%)
+        # 5. Advisory warning if top confidence is low (do NOT wipe out matching diseases)
         top_confidence = candidates[0]["probability"] if candidates else 0
-        if top_confidence < 30:
+        if top_confidence < 30 and candidates:
             warnings.append(
-                f"Độ tin cậy của mô hình thấp ({top_confidence}% < 30%). "
-                "Hệ thống không đưa ra chẩn đoán phỏng đoán; "
-                "vui lòng kiểm tra lại triệu chứng hoặc thăm khám lâm sàng trực tiếp."
+                f"Độ tin cậy của mô hình ở mức tham khảo ({top_confidence}%). "
+                "Bác sĩ vui lòng đối chiếu thêm biểu hiện lâm sàng."
             )
-            medicines = []
-            if has_doctor_diagnosis:
-                medicines = self.ranker.rank_medicines(
-                    candidate_diseases=[],
-                    diagnosis=request.diagnosis or "",
-                    patient=request.patient,
+
+        # 6. Assemble disease items with lifestyle guidance
+        disease_items = []
+        for c in candidates:
+            ls = self.kb_loader.get_lifestyle_by_disease(c.get("raw_name", ""))
+            if not ls["diets"] and not ls["precautions"]:
+                ls = self.kb_loader.get_lifestyle_by_disease(c["name"])
+
+            disease_items.append(
+                DiseaseItem(
+                    name=c["name"],
+                    probability=c["probability"],
+                    description=c.get("description", ""),
+                    specialty=c["specialty"],
+                    matchedSymptoms=c.get("matchedSymptoms", []),
+                    diets=ls["diets"],
+                    precautions=ls["precautions"],
+                    workouts=ls["workouts"],
                 )
-                warnings.append("Danh sách thuốc được gợi ý dựa trên chẩn đoán của bác sĩ.")
-
-            return DiseasePredictionData(
-                diseases=[],
-                medicines=medicines,
-                recognizedSymptoms=recognized_names,
-                unrecognizedTerms=unrecognized,
-                redFlags=red_flags,
-                warnings=warnings,
-                disclaimer=MANDATORY_DISCLAIMER,
-                modelVersion=self.model_version or "unknown",
             )
 
-        # 6. Assemble disease items
-        disease_items = [
-            DiseaseItem(
-                name=c["name"],
-                probability=c["probability"],
-                description=c.get("description", ""),
-                specialty=c["specialty"],
-                matchedSymptoms=c.get("matchedSymptoms", []),
+        top_lifestyle = None
+        if disease_items:
+            top_dis = disease_items[0]
+            top_lifestyle = LifestyleAdvice(
+                disease=top_dis.name,
+                diets=top_dis.diets,
+                precautions=top_dis.precautions,
+                workouts=top_dis.workouts,
             )
-            for c in candidates
-        ]
 
         # 7. Rank medicines based on candidate diseases and doctor diagnosis
         medicines = self.ranker.rank_medicines(
@@ -191,6 +191,7 @@ class DrugService:
         return DiseasePredictionData(
             diseases=disease_items,
             medicines=medicines,
+            lifestyleAdvice=top_lifestyle,
             recognizedSymptoms=recognized_names,
             unrecognizedTerms=unrecognized,
             redFlags=red_flags,

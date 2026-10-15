@@ -106,6 +106,10 @@ class SymptomExtractor:
         # Sort primarily by token count descending, secondarily by char length descending
         phrases.sort(key=lambda x: (x[2], len(x[0])), reverse=True)
         self.sorted_phrases = phrases
+        self.compiled_phrases = [
+            (re.compile(r"(?:\b|^)" + re.escape(p) + r"(?:\b|$)"), p, s_id, length)
+            for p, s_id, length in phrases
+        ]
         logger.info(
             f"Loaded {len(self.symptom_names)} symptoms with {len(self.symptom_dict)} phrase aliases."
         )
@@ -142,17 +146,15 @@ class SymptomExtractor:
             clause_unaccented = strip_accents(clause_cleaned)
             matched_in_clause = False
 
-            # 1. Exact / Substring Longest Match
-            for phrase, s_id, _ in self.sorted_phrases:
-                # Check both accented and unaccented substring match
-                match_pos = -1
-                if phrase in clause_cleaned:
-                    match_pos = clause_cleaned.find(phrase)
-                elif phrase in clause_unaccented:
-                    match_pos = clause_unaccented.find(phrase)
+            # 1. Exact / Word Boundary Longest Match
+            for pattern, phrase, s_id, _ in self.compiled_phrases:
+                m = pattern.search(clause_cleaned)
+                if not m:
+                    m = pattern.search(clause_unaccented)
 
-                if match_pos != -1:
+                if m:
                     matched_in_clause = True
+                    match_pos = m.start()
                     display_name = self.symptom_names.get(s_id, phrase)
 
                     # Check for negation

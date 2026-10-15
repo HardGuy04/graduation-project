@@ -157,24 +157,45 @@ class DiseasePredictor:
         model_classes = self.model.classes_
 
         # 3. Compute symptom matches for all classes to eliminate zero-match hallucinations
+        has_matches = False
         scored_candidates = []
+        n_input = max(1, len(valid_input_symptoms))
         for idx, raw_disease in enumerate(model_classes):
             raw_disease_str = str(raw_disease).strip()
             disease_canonical_symptoms = self.disease_symptom_map.get(raw_disease_str, set())
             matched_sym_ids = valid_input_symptoms.intersection(disease_canonical_symptoms)
             matched_count = len(matched_sym_ids)
+            if matched_count > 0:
+                has_matches = True
+            raw_prob = float(proba[idx])
+            val = (matched_count / n_input) + raw_prob * 0.5
             scored_candidates.append(
-                (idx, raw_disease_str, float(proba[idx]), matched_count, matched_sym_ids)
+                (idx, raw_disease_str, raw_prob, matched_count, matched_sym_ids, val)
             )
 
-        # Sort: first by whether matched_count > 0, second by probability descending
-        scored_candidates.sort(key=lambda item: (item[3] > 0, item[2]), reverse=True)
+        # If there are diseases matching the symptoms, filter to matching diseases only
+        if has_matches:
+            scored_candidates = [c for c in scored_candidates if c[3] > 0]
+            scored_candidates.sort(key=lambda item: item[5], reverse=True)
+        else:
+            scored_candidates.sort(key=lambda item: item[2], reverse=True)
 
         candidates: list[dict[str, Any]] = []
-        for _idx, raw_disease_str, prob_val, _matched_count, matched_sym_ids in scored_candidates[
-            :top_k
-        ]:
-            prob_percent = int(round(prob_val * 100))
+        prev_prob = 100
+        for idx, (_idx, raw_disease_str, prob_val, matched_count, matched_sym_ids, _val) in enumerate(
+            scored_candidates[:top_k]
+        ):
+            # Compute clinical relevance percentage (0-100)
+            if has_matches and valid_input_symptoms:
+                cov = matched_count / n_input
+                score = int(round(cov * 70 + prob_val * 30 + (1.0 / (idx + 1)) * 10))
+                prob_percent = min(99, max(15, score))
+            else:
+                prob_percent = int(round(prob_val * 100))
+
+            if prob_percent > prev_prob:
+                prob_percent = prev_prob
+            prev_prob = prob_percent
 
             # Retrieve disease display info
             info = self.disease_info_map.get(

@@ -5,6 +5,7 @@ verifies integrity, and enforces clinical review governance.
 """
 
 import csv
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ class KBLoader:
         self.symptoms_by_id: dict[str, dict[str, Any]] = {}
         self.medicines_by_id: dict[str, dict[str, Any]] = {}
         self.disease_medicines: dict[str, list[dict[str, Any]]] = {}
+        self.disease_lifestyles: dict[str, dict[str, Any]] = {}
         self.unreviewed_count: int = 0
         self.is_loaded: bool = False
 
@@ -106,6 +108,8 @@ class KBLoader:
                     "active_ingredient": r.get("active_ingredient", "").strip(),
                     "group": r.get("group", "").strip(),
                     "usage": r.get("usage", "").strip(),
+                    "dosage": r.get("dosage", "").strip(),
+                    "instruction": r.get("instruction", "").strip(),
                     "prescription_required": r.get("prescription_required", "true").strip().lower()
                     == "true",
                     "contraindications": contra,
@@ -140,7 +144,37 @@ class KBLoader:
                     }
                 )
 
-        # 5. Governance check
+        # 5. Load disease_lifestyle.csv (if exists)
+        ls_file = self.kb_dir / "disease_lifestyle.csv"
+        if ls_file.exists():
+            with open(ls_file, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    d_id = r["disease_id"].strip()
+                    try:
+                        diets = json.loads(r.get("diets", "[]"))
+                    except Exception:
+                        diets = []
+                    try:
+                        precautions = json.loads(r.get("precautions", "[]"))
+                    except Exception:
+                        precautions = []
+                    try:
+                        workouts = json.loads(r.get("workouts", "[]"))
+                    except Exception:
+                        workouts = []
+
+                    item = {
+                        "disease_id": d_id,
+                        "disease_name_vi": r.get("disease_name_vi", "").strip(),
+                        "diets": diets,
+                        "precautions": precautions,
+                        "workouts": workouts,
+                    }
+                    self.disease_lifestyles[d_id] = item
+                    self.disease_lifestyles[str(r.get("disease_name_vi", "")).strip().lower()] = item
+
+        # 6. Governance check
         if self.unreviewed_count > 0:
             msg = f"Knowledge Base contains {self.unreviewed_count} unreviewed records."
             if settings.KB_REQUIRE_REVIEWED:
@@ -154,8 +188,28 @@ class KBLoader:
         self.is_loaded = True
         logger.info(
             f"Knowledge Base successfully loaded: {len(self.diseases_by_id)} diseases, "
-            f"{len(self.symptoms_by_id)} symptoms, {len(self.medicines_by_id)} medicines."
+            f"{len(self.symptoms_by_id)} symptoms, {len(self.medicines_by_id)} medicines, "
+            f"{len(self.disease_lifestyles)} lifestyle entries."
         )
+
+    def get_lifestyle_by_disease(self, disease_id_or_name: str) -> dict[str, list[str]]:
+        """Retrieve diets, precautions, and workouts for a disease by ID or name."""
+        clean = disease_id_or_name.strip().lower()
+        if clean in self.disease_lifestyles:
+            item = self.disease_lifestyles[clean]
+            return {
+                "diets": item["diets"],
+                "precautions": item["precautions"],
+                "workouts": item["workouts"],
+            }
+        if disease_id_or_name in self.disease_lifestyles:
+            item = self.disease_lifestyles[disease_id_or_name]
+            return {
+                "diets": item["diets"],
+                "precautions": item["precautions"],
+                "workouts": item["workouts"],
+            }
+        return {"diets": [], "precautions": [], "workouts": []}
 
 
 kb_loader = KBLoader()
