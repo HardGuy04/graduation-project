@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ thống Khuyến nghị Y tế AI (CDSS) - Demo Trực quan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/demo.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-logo">🩺</div>
+        <div class="brand-text">
+          <h1>Hệ Thống Ra Quyết Định Lâm Sàng (CDSS)</h1>
+          <p>Clinical Decision Support & Prescription Recommendation</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-badge" id="serverStatusBadge">
+          <span class="status-dot"></span>
+          <span id="serverStatusText">AI Service Online</span>
+        </span>
+        <a href="/docs" target="_blank" class="docs-link">Swagger Docs</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Top Main Navigation Bar -->
+  <nav class="top-nav-bar">
+    <div class="top-nav-inner">
+      <button type="button" class="nav-tab-btn active" id="tabBtnCdss" onclick="switchMainTab('cdss')">
+        <span class="tab-icon">🩺</span>
+        <span class="tab-text">Hệ Thống Chẩn Đoán & Kê Đơn (CDSS)</span>
+      </button>
+      <button type="button" class="nav-tab-btn" id="tabBtnDrugSearch" onclick="switchMainTab('drugSearch')">
+        <span class="tab-icon">💊</span>
+        <span class="tab-text">Tra Cứu Thuốc & Bệnh Lý</span>
+      </button>
+      <button type="button" class="nav-tab-btn" id="tabBtnDdi" onclick="switchMainTab('ddi')">
+        <span class="tab-icon">⚠️</span>
+        <span class="tab-text">Kiểm Tra Tương Tác Thuốc (DDI)</span>
+        <span class="tab-badge" style="background: #fef2f2; color: #dc2626; border-color: #fecaca;">Mới</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Layout (CDSS Tab 1) -->
+  <main class="container" id="cdssMainSection">
+    
+    <!-- Left Column: Input Form & Presets -->
+    <section>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📝</span> Nhập Triệu Chứng Khám Bệnh
+          </div>
+          <p class="card-subtitle">Nhập ngôn ngữ tự nhiên tiếng Việt hoặc chọn ca bệnh mẫu bên dưới</p>
+        </div>
+        <div class="card-body">
+          
+          <!-- Quick Presets -->
+          <div class="presets-label">Ca bệnh lâm sàng mẫu:</div>
+          <div class="presets-container">
+            <button type="button" class="preset-btn" onclick="applyPreset(1)">🦟 Sốt xuất huyết</button>
+            <button type="button" class="preset-btn danger" onclick="applyPreset(2)">🚨 Cấp cứu Đau tim</button>
+            <button type="button" class="preset-btn" onclick="applyPreset(3)">🤧 Cảm lạnh cúm</button>
+            <button type="button" class="preset-btn" onclick="applyPreset(4)">🧠 Đau nửa đầu</button>
+            <button type="button" class="preset-btn" onclick="applyPreset(5)">🍽️ Loét dạ dày</button>
+            <button type="button" class="preset-btn" onclick="applyPreset(6)">🦵 Viêm khớp</button>
+          </div>
+
+          <form id="cdssForm" onsubmit="handleAnalyze(event)">
+            
+            <!-- Symptoms Textarea -->
+            <div class="form-group">
+              <label class="form-label" for="symptomsInput">
+                Mô tả triệu chứng lâm sàng <span class="req">*</span>
+                <span class="hint">(hỗ trợ cả câu phủ định: "không sốt", "chưa nôn")</span>
+              </label>
+              <textarea 
+                id="symptomsInput" 
+                class="form-control" 
+                placeholder="Ví dụ: Bệnh nhân sốt cao, đau đầu dữ dội, đau nhức khớp, nhưng không nôn mửa..."
+                required
+              ></textarea>
+            </div>
+
+            <!-- Patient Info -->
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="patientAge">Tuổi bệnh nhân</label>
+                <input type="number" id="patientAge" class="form-control" value="28" min="0" max="120">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="patientGender">Giới tính</label>
+                <select id="patientGender" class="form-control">
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Allergies History -->
+            <div class="form-group">
+              <label class="form-label">
+                Tiền sử dị ứng thuốc
+                <span class="hint">(click để chọn nhanh)</span>
+              </label>
+              <div class="allergies-wrapper" id="allergiesList">
+                <span class="allergy-chip" onclick="toggleAllergy(this, 'penicillin')">Penicillin</span>
+                <span class="allergy-chip" onclick="toggleAllergy(this, 'aspirin')">Aspirin</span>
+                <span class="allergy-chip" onclick="toggleAllergy(this, 'nsaid')">NSAID</span>
+                <span class="allergy-chip" onclick="toggleAllergy(this, 'cephalosporin')">Cephalosporin</span>
+                <span class="allergy-chip" onclick="toggleAllergy(this, 'sulfonamide')">Sulfonamide</span>
+                <span class="allergy-chip" onclick="toggleAllergy(this, 'paracetamol')">Paracetamol</span>
+              </div>
+            </div>
+
+            <!-- Internal Key (Advanced) -->
+            <input type="hidden" id="internalKey" value="dev-internal-secret-key-change-in-prod">
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-submit" id="submitBtn">
+              <span id="btnIcon">🔬</span>
+              <span id="btnText">Phân Tích & Khuyến Nghị Lâm Sàng</span>
+              <div class="spinner" id="btnSpinner" style="display: none;"></div>
+            </button>
+
+          </form>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Interactive Diagnostic & Prescription Results -->
+    <section class="results-pane" id="resultsPane">
+      
+      <!-- Empty Initial State -->
+      <div class="card" id="emptyStateCard">
+        <div class="empty-state">
+          <div class="empty-icon">🩺</div>
+          <h3>Sẵn sàng hỗ trợ ra quyết định</h3>
+          <p>Nhập triệu chứng của bệnh nhân ở cột bên trái hoặc bấm chọn nhanh một ca bệnh mẫu để trải nghiệm hệ thống phân tích AI y khoa.</p>
+        </div>
+      </div>
+
+      <!-- Result Content (Initially Hidden) -->
+      <div id="resultsContent" style="display: none;" class="results-pane">
+        
+        <!-- Red Flag Alert (If any) -->
+        <div class="red-flag-alert" id="redFlagBox" style="display: none;">
+          <div class="red-flag-icon">🚨</div>
+          <div class="red-flag-content">
+            <h4>CẢNH BÁO DẤU HIỆU NGUY CẤP (RED FLAG)</h4>
+            <div id="redFlagList"></div>
+          </div>
+        </div>
+
+        <!-- NLP Symptoms Recognition Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔍 Triệu Chứng Nhận Diện Được (NLP Tiếng Việt)</div>
+          </div>
+          <div class="card-body">
+            <div id="recognizedSymptomsBox" style="margin-bottom: 0.5rem;"></div>
+            <div id="warningsBox" style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.5rem;"></div>
+          </div>
+        </div>
+
+        <!-- Candidate Diseases Card -->
+        <div class="card">
+          <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div class="card-title">📊 Chẩn Đoán Bệnh Lý Khả Dĩ (ML Classification)</div>
+              <span class="disease-select-tip">💡 Nhấp vào bệnh để xem chi tiết</span>
+            </div>
+            <p class="card-subtitle">Xác suất được tính toán và hiệu chuẩn theo dữ liệu lâm sàng. Nhấp chọn bệnh để cập nhật toàn bộ triệu chứng, thuốc và lối sống bên dưới.</p>
+          </div>
+          <div class="card-body" id="diseasesList"></div>
+        </div>
+
+        <!-- Disease Detailed Profile & Symptoms Hub -->
+        <div class="card" id="diseaseDetailCard" style="display: none;">
+          <div class="card-header disease-detail-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div class="card-title" style="color: var(--primary-hover); font-size: 1.05rem;">
+                  <span>🩺</span> Bệnh Đang Chọn: <span id="detailDiseaseTitle" style="color: #0f766e; text-decoration: underline;">...</span>
+                </div>
+                <div id="detailDiseaseDesc" class="disease-desc" style="margin: 0.35rem 0 0 0; color: var(--slate-700);"></div>
+              </div>
+              <div style="text-align: right;">
+                <span id="detailDiseaseSpecialty" class="disease-specialty" style="background: white; border: 1px solid var(--primary-border); font-size: 0.8rem; font-weight: 700; color: var(--primary-hover);">...</span>
+                <div id="detailDiseaseProb" style="font-size: 0.78rem; font-weight: 700; color: var(--slate-600); margin-top: 0.25rem;"></div>
+                <button type="button" class="preset-btn" style="background: var(--primary); color: white; border: none; font-size: 0.76rem; font-weight: 700; margin-top: 0.45rem; padding: 0.35rem 0.75rem; box-shadow: 0 2px 5px rgba(13, 148, 136, 0.2);" onclick="jumpToDrugSearchFromDetail()" title="Chuyển sang tab Tra cứu để xem toàn bộ phác đồ thuốc chi tiết của bệnh này">
+                  💊 Tra cứu thuốc riêng của bệnh này →
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem;">
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--slate-800); display: flex; align-items: center; gap: 0.4rem;">
+                <span>📋</span> Tất Cả Triệu Chứng Của Bệnh Này
+              </div>
+              <div id="diseaseSymptomRatio" class="disease-ratio-badge"></div>
+            </div>
+            <div id="diseaseAllSymptomsBox" class="disease-symptoms-container"></div>
+            <div class="symptom-legend">
+              <span class="legend-item"><span class="legend-dot matched"></span> Triệu chứng bệnh nhân đang có</span>
+              <span class="legend-item"><span class="legend-dot characteristic"></span> Triệu chứng đặc trưng khác của bệnh</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommended Medicines Card -->
+        <div class="card" id="medicinesCard">
+          <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div class="card-title" id="medicinesTitle">💊 Phác Đồ Thuốc & Hướng Dẫn Điều Trị</div>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="preset-btn" style="background: #fef2f2; color: #dc2626; border-color: #fecaca; font-size: 0.76rem; font-weight: 700; padding: 0.35rem 0.65rem;" onclick="checkDdiFromCurrentPrescription()" title="Kiểm tra tương tác thuốc giữa các thuốc trong đơn này">
+                  ⚠️ Kiểm tra tương tác đơn này →
+                </button>
+                <div class="med-filter-toggle">
+                  <button type="button" class="med-toggle-btn active" id="btnFilterDiseaseMeds" onclick="toggleMedView('disease')">Chỉ thuốc bệnh này</button>
+                  <button type="button" class="med-toggle-btn" id="btnFilterAllMeds" onclick="toggleMedView('all')">Tất cả thuốc</button>
+                </div>
+              </div>
+            </div>
+            <p class="card-subtitle" id="medicinesSubtitle">Khuyến nghị kèm liều lượng lâm sàng chuẩn và cảnh báo an toàn</p>
+          </div>
+          <div class="card-body" id="medicinesList"></div>
+        </div>
+
+        <!-- Lifestyle Advice Card (100% Vietnamese) -->
+        <div class="card" id="lifestyleCard">
+          <div class="card-header">
+            <div class="card-title" id="lifestyleTitle">🥗 Tư Vấn Lối Sống & Phục Hồi Toàn Diện</div>
+            <p class="card-subtitle" id="lifestyleSubtitle">Chế độ dinh dưỡng, phòng ngừa và sinh hoạt bằng tiếng Việt</p>
+          </div>
+          <div class="card-body">
+            <div class="lifestyle-grid">
+              
+              <!-- Diets -->
+              <div class="lifestyle-col">
+                <div class="lifestyle-title diets">🥑 Chế độ Dinh dưỡng</div>
+                <ul class="lifestyle-list" id="lifestyleDiets"></ul>
+              </div>
+
+              <!-- Precautions -->
+              <div class="lifestyle-col">
+                <div class="lifestyle-title precautions">🛡️ Biện pháp Phòng ngừa</div>
+                <ul class="lifestyle-list" id="lifestylePrecautions"></ul>
+              </div>
+
+              <!-- Workouts -->
+              <div class="lifestyle-col">
+                <div class="lifestyle-title workouts">🏃 Lối sống & Vận động</div>
+                <ul class="lifestyle-list" id="lifestyleWorkouts"></ul>
+              </div>
+
+            </div>
+          </div>
+          <div class="disclaimer-box" id="disclaimerText">
+            Kết quả chỉ mang tính tham khảo y khoa, không thay thế chẩn đoán của bác sĩ điều trị.
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Disease & Medicine Search Section (Tab 2) -->
+  <main class="search-container" id="drugSearchSection" style="display: none;">
+    
+    <!-- Hero / Search Bar Card -->
+    <div class="search-hero-card">
+      
+      <!-- Search Mode Switcher (Ý 4: Tra cứu 2 chiều) -->
+      <div class="search-mode-switcher">
+        <button type="button" class="search-mode-btn active" id="btnModeDisease" onclick="setSearchMode('disease')">
+          <span>🩺</span> Tìm Thuốc Theo Bệnh Lý
+        </button>
+        <button type="button" class="search-mode-btn" id="btnModeMedicine" onclick="setSearchMode('medicine')">
+          <span>🔄</span> Tìm Bệnh Theo Tên Thuốc (Tra Cứu Ngược)
+        </button>
+      </div>
+
+      <div class="search-hero-title" id="searchHeroTitle">
+        <span>💊</span> Tra Cứu Toàn Bộ Thuốc Điều Trị Theo Tên Bệnh
+      </div>
+      <p class="search-hero-desc" id="searchHeroDesc">
+        Nhập tên bất kỳ bệnh lý nào (tiếng Việt có dấu hoặc không dấu, tên tiếng Anh hoặc mã bệnh) để tra cứu toàn bộ danh mục thuốc chỉ định theo phác đồ y khoa, bao gồm thuốc hàng 1 (First-line), thuốc hàng 2 (Second-line), liều dùng, cách dùng, chống chỉ định và hướng dẫn chăm sóc.
+      </p>
+
+      <form id="diseaseSearchForm" onsubmit="handleDiseaseSearchSubmit(event)" class="search-form-box">
+        <div class="search-input-wrapper">
+          <span class="search-lens-icon">🔍</span>
+          <input 
+            type="text" 
+            id="diseaseSearchInput" 
+            class="disease-search-input" 
+            list="diseaseDatalist" 
+            placeholder="Nhập tên bệnh lý cần tra cứu (ví dụ: Sốt xuất huyết, Hen phế quản, Sốt rét, Loét dạ dày...)"
+            autocomplete="off"
+            oninput="handleSearchInputChange()"
+          />
+          <datalist id="diseaseDatalist"></datalist>
+          <datalist id="medicineDatalist"></datalist>
+          <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="clearDiseaseSearch()" title="Xóa tìm kiếm" style="display: none;">✕</button>
+        </div>
+        <button type="submit" class="btn-search-submit" id="btnSearchSubmit">
+          <span id="searchBtnIcon">🔍</span>
+          <span id="searchBtnText">Tìm Kiếm Thuốc</span>
+          <span class="spinner" id="searchBtnSpinner" style="display: none;"></span>
+        </button>
+      </form>
+
+      <!-- Quick Disease/Medicine Suggestion Pills -->
+      <div class="search-presets-row">
+        <span class="search-presets-label" id="searchPresetsLabel">Gợi ý bệnh phổ biến:</span>
+        <div class="search-pills-list" id="searchPillsList">
+          <button type="button" class="search-pill" onclick="quickSearch('Sốt xuất huyết')">🦟 Sốt xuất huyết</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Sốt rét')">🦟 Sốt rét</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Loét dạ dày tá tràng')">🍽️ Loét dạ dày</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Cảm cúm')">🤧 Cảm lạnh cúm</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Hen phế quản')">🫁 Hen phế quản</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Đau nửa đầu')">🧠 Đau nửa đầu</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Viêm khớp')">🦵 Viêm khớp</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Tăng huyết áp')">❤️ Tăng huyết áp</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Đái tháo đường')">🩸 Đái tháo đường</button>
+          <button type="button" class="search-pill" onclick="quickSearch('Viêm phế quản')">🫁 Viêm phế quản</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Results Container -->
+    <div id="diseaseSearchResults">
+      <!-- Default Welcome / Empty state -->
+      <div class="card empty-state" id="searchEmptyState">
+        <div class="empty-icon" id="searchEmptyIcon">💊</div>
+        <h3 id="searchEmptyTitle">Tra Cứu Danh Mục Thuốc Theo Tên Bệnh Lý</h3>
+        <p id="searchEmptyDesc">Vui lòng nhập tên bệnh vào thanh tìm kiếm ở trên hoặc chọn nhanh từ danh sách gợi ý để xem toàn bộ thuốc điều trị theo phác đồ.</p>
+      </div>
+
+      <!-- Result Details Container (hidden until search) -->
+      <div id="searchResultContent" style="display: none;"></div>
+    </div>
+
+  </main>
+
+  <!-- Drug-Drug Interaction Checker Section (Tab 3) -->
+  <main class="search-container" id="ddiSection" style="display: none;">
+    
+    <!-- Hero / DDI Control Card -->
+    <div class="ddi-hero-card">
+      <div class="ddi-hero-title">
+        <span>⚠️</span> Kiểm Tra Tương Tác Thuốc Lâm Sàng (Drug-Drug Interaction Checker)
+      </div>
+      <p class="ddi-hero-desc">
+        Hệ thống phân tích an toàn dược lý tự động rà soát xung đột khi phối hợp từ 2 loại thuốc trở lên: phát hiện nguy cơ tương tác (Chống chỉ định tuyệt đối, Cảnh báo mức độ nặng, Thận trọng, Chú ý), giải thích cơ chế dược động học / dược lực học và đề xuất hướng xử trí y khoa an toàn.
+      </p>
+
+      <!-- Input and Medicine Selector -->
+      <div class="ddi-input-box">
+        <div class="search-input-wrapper">
+          <span class="search-lens-icon">💊</span>
+          <input 
+            type="text" 
+            id="ddiDrugInput" 
+            class="disease-search-input" 
+            list="medicineDatalist" 
+            placeholder="Nhập tên thuốc hoặc hoạt chất cần thêm vào danh sách kiểm tra (ví dụ: Aspirin, NSAIDs...)"
+            autocomplete="off"
+            onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addDdiDrugFromInput(); }"
+          />
+        </div>
+        <button type="button" class="btn-search-submit" onclick="addDdiDrugFromInput()" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+          <span>➕</span> Thêm Thuốc
+        </button>
+        <button type="button" class="btn-clear-ddi" onclick="clearAllDdiDrugs()" title="Xóa tất cả thuốc đã chọn">
+          <span>🗑️</span> Xóa hết
+        </button>
+      </div>
+
+      <!-- Selected Drugs Chips Container -->
+      <div class="ddi-selected-drugs-wrapper">
+        <div class="ddi-selected-label">Danh sách thuốc đang chọn để kiểm tra (<span id="ddiDrugCount">0</span> thuốc):</div>
+        <div class="ddi-chips-container" id="ddiSelectedChips">
+          <span class="ddi-no-drug-tip">Chưa có thuốc nào được chọn. Hãy nhập tên thuốc ở trên hoặc chọn nhanh từ các ca lâm sàng mẫu bên dưới.</span>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="btn-search-submit" id="btnRunDdi" onclick="runDdiCheck()" style="padding: 0.75rem 2rem; font-size: 1rem;">
+          <span id="ddiBtnIcon">⚠️</span>
+          <span id="ddiBtnText">Kiểm Tra Tương Tác Thuốc</span>
+          <span class="spinner" id="ddiBtnSpinner" style="display: none;"></span>
+        </button>
+        <span style="font-size: 0.8rem; color: var(--slate-500);">(Hệ thống tự động đối chiếu chéo tất cả các cặp thuốc kết hợp)</span>
+      </div>
+
+      <!-- Clinical Sample Presets -->
+      <div class="search-presets-row" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed var(--slate-200);">
+        <span class="search-presets-label">Ca tương tác lâm sàng mẫu:</span>
+        <div class="search-pills-list">
+          <button type="button" class="search-pill" style="border-color: #fca5a5; color: #991b1b; background: #fff5f5;" onclick="applyDdiPreset(1)">🚨 Aspirin + Blood thinners</button>
+          <button type="button" class="search-pill" style="border-color: #fdba74; color: #9a3412; background: #fff7ed;" onclick="applyDdiPreset(2)">🚨 Aspirin + NSAIDs</button>
+          <button type="button" class="search-pill" style="border-color: #fca5a5; color: #991b1b; background: #fff5f5;" onclick="applyDdiPreset(3)">🚨 Beta-blockers + Calcium channel blockers</button>
+          <button type="button" class="search-pill" style="border-color: #fdba74; color: #9a3412; background: #fff7ed;" onclick="applyDdiPreset(4)">⚠️ NSAIDs + ACE inhibitors</button>
+          <button type="button" class="search-pill" style="border-color: #fde047; color: #854d0e; background: #fefce8;" onclick="applyDdiPreset(5)">⚠️ Insulin + Beta-blockers</button>
+          <button type="button" class="search-pill" style="border-color: #fde047; color: #854d0e; background: #fefce8;" onclick="applyDdiPreset(6)">⚠️ Antacids + Antibiotics</button>
+          <button type="button" class="search-pill" style="border-color: #fdba74; color: #9a3412; background: #fff7ed;" onclick="applyDdiPreset(7)">⚠️ Corticosteroids + NSAIDs</button>
+          <button type="button" class="search-pill" style="border-color: #bbf7d0; color: #166534; background: #f0fdf4;" onclick="applyDdiPreset(8)">🟢 Paracetamol + Antifungal Cream (An toàn)</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Results Container -->
+    <div id="ddiResultsContainer">
+      <!-- Default Empty State -->
+      <div class="card empty-state" id="ddiEmptyState">
+        <div class="empty-icon">⚠️</div>
+        <h3>Kiểm Tra & Cảnh Báo Tương Tác Dược Lý</h3>
+        <p>Vui lòng thêm ít nhất 2 loại thuốc vào danh sách ở trên hoặc nhấp chọn một ca lâm sàng mẫu để bắt đầu quét tương tác đối kháng.</p>
+      </div>
+
+      <!-- Dynamic DDI Results Content -->
+      <div id="ddiResultContent" style="display: none;"></div>
+    </div>
+
+  </main>
+
+  <!-- JavaScript Interaction Logic -->
+  <script src="/static/js/demo.js"></script>
+
+</body>
+</html>

@@ -58,11 +58,3 @@ X-Internal-Key: {{internalKey}}
 ### 6. Kiểm tra trạng thái hệ thống (Health Check)
 GET {{baseUrl}}/health
 
-### 7. Chatbot Placeholder (Expected: 501 Not Implemented)
-POST {{baseUrl}}/internal/chatbot
-Content-Type: application/json
-X-Internal-Key: {{internalKey}}
-
-{
-  "message": "Xin chào"
-}

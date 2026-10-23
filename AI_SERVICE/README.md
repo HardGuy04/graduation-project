@@ -100,6 +100,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
   {"status":"ok","model_loaded":true,"model_version":"2026.10.0"}
   ```
 
+* **Giao diện Demo Tương tác trực quan (Playground UI):**
+  Mở trình duyệt truy cập: `http://localhost:8000/demo` (Hỗ trợ chọn nhanh các ca bệnh mẫu, nhập triệu chứng tiếng Việt, hiển thị kết quả chẩn đoán, phác đồ thuốc kèm liều lượng và tư vấn lối sống).
+
 * **Giao diện Swagger tương tác trực tiếp:**
   Mở trình duyệt truy cập: `http://localhost:8000/docs`
 

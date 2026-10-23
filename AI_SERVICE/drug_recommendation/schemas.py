@@ -3,6 +3,8 @@
 Contract-first definitions strictly matching the API specification.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -132,6 +134,10 @@ class DiseaseItem(BaseModel):
     matchedSymptoms: list[str] = Field(
         default_factory=list,
         description="User-input symptoms matching this candidate disease",
+    )
+    allSymptoms: list[str] = Field(
+        default_factory=list,
+        description="Toàn bộ các triệu chứng đặc trưng của bệnh lý này trong cơ sở tri thức y khoa",
     )
     diets: list[str] = Field(
         default_factory=list,
@@ -265,3 +271,197 @@ class HealthResponse(BaseModel):
     status: str = "ok"
     model_loaded: bool = False
     model_version: str | None = None
+
+
+class DiseaseMedicineSearchItem(BaseModel):
+    """Medicine details when queried for a specific disease."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    activeIngredient: str = Field(default="", description="Active pharmaceutical ingredient")
+    group: str = Field(default="", description="Pharmacological drug group")
+    usage: str = Field(default="", description="Clinical indication and usage")
+    dosage: str = Field(default="", description="Standard clinical dosage")
+    instruction: str = Field(default="", description="Safe administration instructions")
+    prescriptionRequired: bool = Field(
+        default=True, description="True for Rx (prescription required), False for OTC"
+    )
+    contraindications: list[str] = Field(
+        default_factory=list, description="Contraindicated substances or allergies"
+    )
+    line: int = Field(default=1, description="Treatment line (1: First-line, 2: Second-line)")
+    weight: float = Field(default=0.5, description="Evidence weight of recommendation")
+    note: str = Field(default="", description="Clinical recommendation notes")
+
+
+class DiseaseDetailSearchItem(BaseModel):
+    """Disease metadata returned in disease medicine search."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    name_en: str = Field(default="", description="English disease name")
+    specialty: str = Field(default="", description="Clinical specialty")
+    description: str = Field(default="", description="Clinical overview")
+    symptoms: list[str] = Field(default_factory=list, description="Characteristic symptoms")
+    diets: list[str] = Field(default_factory=list, description="Dietary recommendations")
+    precautions: list[str] = Field(default_factory=list, description="Preventive precautions")
+    workouts: list[str] = Field(default_factory=list, description="Lifestyle and physical activities")
+
+
+class DiseaseMedicineSearchData(BaseModel):
+    """Payload returned for disease medicine search."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    found: bool = False
+    query: str = ""
+    message: str | None = None
+    disease: DiseaseDetailSearchItem | None = None
+    totalMedicines: int = 0
+    medicines: list[DiseaseMedicineSearchItem] = Field(default_factory=list)
+    suggestedDiseases: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class DiseaseMedicineSearchResponse(BaseModel):
+    """Response model for GET /internal/medicines-by-disease."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    success: bool = True
+    data: DiseaseMedicineSearchData
+
+
+class MedicineDiseaseIndicationItem(BaseModel):
+    """Disease indicated for a medicine."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    name_en: str = Field(default="", description="English disease name")
+    specialty: str = Field(default="", description="Clinical specialty")
+    description: str = Field(default="", description="Disease clinical overview")
+    line: int = Field(default=1, description="Treatment line (1: First-line, 2: Second-line)")
+    weight: float = Field(default=0.5, description="Evidence weight of recommendation")
+    note: str = Field(default="", description="Recommendation note")
+
+
+class MedicineDetailSearchItem(BaseModel):
+    """Comprehensive medicine metadata returned in reverse search."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    activeIngredient: str = Field(default="", description="Active pharmaceutical ingredient")
+    group: str = Field(default="", description="Pharmacological drug group")
+    usage: str = Field(default="", description="Clinical indication and mechanism")
+    dosage: str = Field(default="", description="Standard clinical dosage")
+    instruction: str = Field(default="", description="Safe administration instructions")
+    prescriptionRequired: bool = Field(
+        default=True, description="True for Rx, False for OTC"
+    )
+    contraindications: list[str] = Field(
+        default_factory=list, description="Contraindicated substances or allergies"
+    )
+
+
+class MedicineSearchData(BaseModel):
+    """Payload returned for reverse medicine search (finding diseases indicated for medicine)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    found: bool = False
+    query: str = ""
+    message: str | None = None
+    medicine: MedicineDetailSearchItem | None = None
+    totalDiseases: int = 0
+    indicatedDiseases: list[MedicineDiseaseIndicationItem] = Field(default_factory=list)
+    suggestedMedicines: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class MedicineSearchResponse(BaseModel):
+    """Response model for GET /internal/diseases-by-medicine."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    success: bool = True
+    data: MedicineSearchData
+
+
+class DDICheckRequest(BaseModel):
+    """Request payload for Drug-Drug Interaction check."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    drugs: list[str] = Field(
+        ...,
+        min_length=2,
+        max_length=20,
+        description="List of at least 2 medicine names or IDs to check for clinical interactions",
+    )
+
+    @field_validator("drugs")
+    @classmethod
+    def validate_drugs(cls, v: list[str]) -> list[str]:
+        cleaned = [d.strip() for d in v if d and d.strip()]
+        if len(cleaned) < 2:
+            raise ValueError("Cần tối thiểu 2 tên thuốc để kiểm tra tương tác.")
+        return cleaned
+
+
+class DDIInteractionItem(BaseModel):
+    """Single detected drug-drug interaction item."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    drug1: str
+    drug2: str
+    matchedRuleDrug1: str = ""
+    matchedRuleDrug2: str = ""
+    severity: str = Field(..., description="contraindicated | major | moderate | minor")
+    severityLabel: str = Field(default="", description="Vietnamese localized severity title")
+    mechanism: str = Field(default="", description="Pharmacological mechanism")
+    clinicalEffect: str = Field(default="", description="Clinical consequences and risks")
+    recommendation: str = Field(default="", description="Clinical management guidance")
+
+
+class DDISeveritySummary(BaseModel):
+    """Counts of interactions grouped by clinical severity."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    contraindicated: int = 0
+    major: int = 0
+    moderate: int = 0
+    minor: int = 0
+    total: int = 0
+
+
+class DDICheckData(BaseModel):
+    """Payload returned by DDI check."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    drugsAnalyzed: list[str] = Field(default_factory=list)
+    totalInteractions: int = 0
+    hasCriticalConflict: bool = False
+    severitySummary: DDISeveritySummary = Field(default_factory=DDISeveritySummary)
+    interactions: list[DDIInteractionItem] = Field(default_factory=list)
+    message: str = ""
+    disclaimer: str = ""
+
+
+class DDICheckResponse(BaseModel):
+    """Response wrapper for DDI checking API."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    success: bool = True
+    data: DDICheckData
+

@@ -35,7 +35,7 @@ test:
 
 lint:
 	$(PYTHON) -m ruff check .
-	$(PYTHON) -m mypy drug_recommendation chatbot scripts main.py
+	$(PYTHON) -m mypy drug_recommendation scripts main.py
 
 run:
 	$(PYTHON) -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload

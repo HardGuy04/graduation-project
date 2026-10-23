@@ -41,8 +41,8 @@ class Settings:
     # Paths (all relative to BASE_DIR)
     BASE_DIR: Path = BASE_DIR
     DATA_DIR: Path = BASE_DIR / "data"
-    RAW_DATA_DIR: Path = BASE_DIR / "dataset"
-    DATA_RAW_DIR: Path = BASE_DIR / "data" / "raw"
+    RAW_DATA_DIR: Path = BASE_DIR / "data" / "raw"
+    DATA_RAW_DIR: Path = RAW_DATA_DIR
     PROCESSED_DATA_DIR: Path = BASE_DIR / "data" / "processed"
     KB_DIR: Path = BASE_DIR / "data" / "kb"
     ARTIFACTS_DIR: Path = BASE_DIR / "drug_recommendation" / "artifacts"

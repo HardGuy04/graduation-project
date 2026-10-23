@@ -103,7 +103,7 @@ class DiseasePredictor:
                     self.disease_info_map[d_en] = info
 
         # 4. Load canonical disease-symptom associations for explainability
-        raw_training = settings.BASE_DIR / "dataset" / "Training.csv"
+        raw_training = settings.RAW_DATA_DIR / "Training.csv"
         if raw_training.exists():
             df_raw = pd.read_csv(raw_training).drop(columns=["Unnamed: 133"], errors="ignore")
             for disease_name, group in df_raw.groupby("prognosis"):
@@ -207,9 +207,18 @@ class DiseasePredictor:
                 },
             )
 
-            matched_display_names = [
-                symptom_name_map.get(s, s.replace("_", " ")) for s in sorted(matched_sym_ids)
-            ]
+            # Canonical and matched symptoms for this disease
+            disease_syms = self.disease_symptom_map.get(raw_disease_str, set())
+            if symptom_name_map:
+                matched_display_names = [
+                    symptom_name_map.get(s, s.replace("_", " ")) for s in sorted(matched_sym_ids)
+                ]
+                all_display_names = [
+                    symptom_name_map.get(s, s.replace("_", " ")) for s in sorted(disease_syms)
+                ]
+            else:
+                matched_display_names = [s.replace("_", " ") for s in sorted(matched_sym_ids)]
+                all_display_names = [s.replace("_", " ") for s in sorted(disease_syms)]
 
             candidates.append(
                 {
@@ -219,6 +228,7 @@ class DiseasePredictor:
                     "description": info["description"],
                     "specialty": info["specialty"],
                     "matchedSymptoms": matched_display_names,
+                    "allSymptoms": all_display_names,
                 }
             )
 

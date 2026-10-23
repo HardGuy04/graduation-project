@@ -1,9 +1,9 @@
 # Raw Dataset Metadata
 
-Tài liệu này ghi lại thông tin xác thực nguồn gốc và tính toàn vẹn của các tệp dữ liệu raw trong `AI_SERVICE/dataset`.
+Tài liệu này ghi lại thông tin xác thực nguồn gốc và tính toàn vẹn của các tệp dữ liệu raw trong `AI_SERVICE/data/raw`.
 
 ## Nguyên tắc xử lý
-- Toàn bộ tệp trong thư mục `dataset/` là **READ-ONLY**, tuyệt đối không chỉnh sửa trực tiếp hay ghi đè.
+- Toàn bộ tệp trong thư mục `data/raw/` là **READ-ONLY**, tuyệt đối không chỉnh sửa trực tiếp hay ghi đè.
 - Mọi biến đổi dữ liệu được thực hiện thông qua script tái lập tại `scripts/build_dataset.py` và xuất sang `data/processed/`.
 
 ## Danh mục tệp và SHA-256 Checksums

@@ -8,9 +8,9 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from chatbot.router import router as chatbot_router
 from drug_recommendation.config import settings
 from drug_recommendation.drug_service import drug_service
 from drug_recommendation.router import router as drug_router
@@ -46,10 +46,6 @@ tags_metadata = [
         "name": "System & Health",
         "description": "Các endpoint kiểm tra trạng thái hoạt động của máy chủ và phiên bản mô hình máy học đã nạp.",
     },
-    {
-        "name": "Chatbot Service",
-        "description": "Phân hệ tiếp nhận hội thoại và tương tác trực tiếp với bệnh nhân.",
-    },
 ]
 
 app = FastAPI(
@@ -73,10 +69,17 @@ Tài liệu tương tác API chính thức của phân hệ Trí tuệ Nhân t�
     lifespan=lifespan,
 )
 
-# CORS: Restricted strictly to backend calls
+# CORS: Allowed origins for backend, frontend, and local testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000"],
+    allow_origins=[
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -131,9 +134,28 @@ async def root() -> dict[str, Any]:
     return {
         "service": "AI_SERVICE - Clinic Decision Support System",
         "status": "running",
+        "demo_url": "/demo",
         "docs_url": "/docs",
         "health_url": "/health",
     }
+
+
+@app.get(
+    "/demo",
+    response_class=HTMLResponse,
+    tags=["System & Health"],
+    summary="Giao diện Web Demo CDSS tương tác trực quan",
+)
+async def demo_page() -> HTMLResponse:
+    """Serve interactive web demo playground for clinical decision support."""
+    demo_file = settings.BASE_DIR / "static" / "demo.html"
+    if demo_file.exists():
+        content = demo_file.read_text(encoding="utf-8")
+        return HTMLResponse(content=content, status_code=status.HTTP_200_OK)
+    return HTMLResponse(
+        content="<h3>Tệp demo.html không tồn tại. Vui lòng kiểm tra thư mục static/</h3>",
+        status_code=status.HTTP_404_NOT_FOUND,
+    )
 
 
 @app.get(
@@ -152,5 +174,10 @@ async def health_check() -> dict[str, Any]:
 
 
 # Include internal sub-routers
-app.include_router(chatbot_router)
 app.include_router(drug_router)
+
+# Mount static directory for modular CSS, JS and assets
+static_dir = settings.BASE_DIR / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+

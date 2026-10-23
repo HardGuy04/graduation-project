@@ -273,12 +273,3 @@ def test_health_check_endpoint() -> None:
         assert payload["model_loaded"] is True
         assert payload["model_version"] is not None
 
-
-def test_chatbot_endpoint_placeholder() -> None:
-    """Chatbot endpoint is a placeholder and must return 501 Not Implemented."""
-    with TestClient(app) as client:
-        response = client.post("/internal/chatbot")
-        assert response.status_code == 501
-        payload = response.json()
-        assert payload["success"] is False
-        assert "chatbot" in payload["message"].lower()
