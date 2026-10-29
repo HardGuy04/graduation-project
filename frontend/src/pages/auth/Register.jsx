@@ -2,14 +2,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Button from "../../components/ui/Button";
-import { FormRow, Input, Select } from "../../components/ui/Field";
+import { FormRow, Input } from "../../components/ui/Field";
+import { ComboboxFieldRHF } from "../../components/app/ComboboxField";
+import { GENDER_OPTIONS } from "../../utils/constants";
+import { DateFieldRHF } from "../../components/app/DateField";
+import { toISODate } from "@/lib/date";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Register() {
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
   const {
-    register, handleSubmit, watch, formState: { errors, isSubmitting },
+    register, control, handleSubmit, watch, formState: { errors, isSubmitting },
   } = useForm({ defaultValues: { gender: "male" } });
 
   async function onSubmit(values) {
@@ -41,17 +45,13 @@ export default function Register() {
             <Input placeholder="09xxxxxxxx" {...register("phone", { required: "Bắt buộc" })} />
           </FormRow>
           <FormRow label="Ngày sinh" error={errors.dateOfBirth?.message}>
-            <Input type="date" {...register("dateOfBirth")} />
+            <DateFieldRHF control={control} name="dateOfBirth" max={toISODate(new Date())} placeholder="Chọn ngày sinh" />
           </FormRow>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <FormRow label="Giới tính">
-            <Select {...register("gender")}>
-              <option value="male">Nam</option>
-              <option value="female">Nữ</option>
-              <option value="other">Khác</option>
-            </Select>
+            <ComboboxFieldRHF control={control} name="gender" options={GENDER_OPTIONS} placeholder="Chọn giới tính" />
           </FormRow>
           <FormRow label="Địa chỉ">
             <Input placeholder="Hà Nội" {...register("address")} />

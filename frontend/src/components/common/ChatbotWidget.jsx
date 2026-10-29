@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { HiOutlineChatAlt2, HiOutlineX, HiOutlinePaperAirplane, HiOutlineSparkles } from "react-icons/hi";
-import clsx from "clsx";
+import { Button } from "@/components/kit/button";
+import { cn } from "@/lib/utils";
 import { chatbotService } from "../../services/commonService";
 import { useAuth } from "../../context/AuthContext";
 
@@ -42,86 +44,89 @@ export default function ChatbotWidget() {
 
   return (
     <>
-      <button
+      <Button
+        size="icon"
         onClick={() => setOpen((v) => !v)}
-        className={clsx(
-          "fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-pop transition-transform hover:scale-105",
-          open ? "bg-ink text-white" : "bg-teal-500 text-white"
-        )}
-        aria-label="Trợ lý ảo"
+        aria-label={open ? "Đóng trợ lý ảo" : "Mở trợ lý ảo"}
+        aria-expanded={open}
+        aria-controls="medicare-chat"
+        className="fixed bottom-5 right-5 z-40 h-14 w-14 shadow-float [&_svg]:size-6"
       >
-        {open ? <HiOutlineX className="h-6 w-6" /> : <HiOutlineChatAlt2 className="h-6 w-6" />}
-      </button>
+        {open ? <HiOutlineX /> : <HiOutlineChatAlt2 />}
+      </Button>
 
-      {open && (
-        <div className="fixed bottom-24 right-5 z-40 flex h-[min(560px,70vh)] w-[min(380px,90vw)] flex-col overflow-hidden rounded-xl2 border border-slate-100 bg-white shadow-pop animate-slide-up">
-          <div className="flex items-center gap-2.5 bg-teal-700 px-4 py-3.5 text-white">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500">
-              <HiOutlineSparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-bold font-display">Trợ lý MediCare AI</p>
-              <p className="text-[11px] text-teal-100">Được hỗ trợ bởi mô hình AI cục bộ</p>
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-3 overflow-y-auto scrollbar-thin bg-slate-50/60 px-4 py-4">
-            {messages.map((m, i) => (
-              <div key={i} className={clsx("flex", m.from === "user" ? "justify-end" : "justify-start")}>
-                <div
-                  className={clsx(
-                    "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
-                    m.from === "user" ? "bg-teal-500 text-white rounded-br-sm" : "bg-white border border-slate-100 text-ink rounded-bl-sm"
-                  )}
-                >
-                  {m.text}
-                </div>
+      <AnimatePresence>
+        {open && (
+          <motion.section
+            id="medicare-chat"
+            aria-label="Trợ lý MediCare AI"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            className="auralis fixed bottom-24 right-5 z-40 flex h-[min(560px,70vh)] w-[min(380px,calc(100vw-2.5rem))] origin-bottom-right flex-col overflow-hidden rounded-card border border-border bg-card shadow-float"
+          >
+            <div className="flex items-center gap-3 bg-primary px-5 py-4 text-primary-foreground">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
+                <HiOutlineSparkles aria-hidden className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Trợ lý MediCare AI</p>
+                <p className="text-[11px] text-primary-foreground/70">Được hỗ trợ bởi mô hình AI cục bộ</p>
               </div>
-            ))}
-            {sending && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-sm border border-slate-100 bg-white px-3.5 py-2.5 text-sm text-ink-faint">
-                  Đang soạn trả lời…
+            </div>
+
+            <div className="flex-1 space-y-3 overflow-y-auto scrollbar-thin bg-background px-4 py-4" aria-live="polite">
+              {messages.map((m, i) => (
+                <div key={i} className={cn("flex", m.from === "user" ? "justify-end" : "justify-start")}>
+                  <div
+                    className={cn(
+                      "max-w-[85%] rounded-[18px] px-4 py-2.5 text-sm leading-relaxed",
+                      m.from === "user" ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md border border-border bg-card text-foreground"
+                    )}
+                  >
+                    {m.text}
+                  </div>
                 </div>
+              ))}
+              {sending && (
+                <div className="flex justify-start">
+                  <div className="rounded-[18px] rounded-bl-md border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground">
+                    Đang soạn trả lời…
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {messages.length < 3 && (
+              <div className="flex flex-wrap gap-1.5 border-t border-border bg-card px-3 py-2.5">
+                {SUGGESTIONS.map((s) => (
+                  <Button key={s} variant="outline" size="sm" onClick={() => send(s)} className="h-auto min-h-11 whitespace-normal py-2 text-left text-xs font-medium">
+                    {s}
+                  </Button>
+                ))}
               </div>
             )}
-            <div ref={bottomRef} />
-          </div>
 
-          {messages.length < 3 && (
-            <div className="flex flex-wrap gap-1.5 border-t border-slate-100 bg-white px-3 py-2.5">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => send(s)}
-                  className="rounded-full border border-slate-200 px-2.5 py-1 text-xs text-ink-soft hover:border-teal-300 hover:text-teal-600"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <form
-            onSubmit={(e) => { e.preventDefault(); send(); }}
-            className="flex items-center gap-2 border-t border-slate-100 bg-white px-3 py-3"
-          >
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Nhập câu hỏi của bạn…"
-              className="flex-1 rounded-full border border-slate-200 px-3.5 py-2 text-sm outline-none focus:border-teal-400"
-            />
-            <button
-              type="submit"
-              disabled={sending || !input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-500 text-white disabled:bg-slate-200"
+            <form
+              onSubmit={(e) => { e.preventDefault(); send(); }}
+              className="flex items-center gap-2 border-t border-border bg-card px-3 py-3"
             >
-              <HiOutlinePaperAirplane className="h-4 w-4 rotate-90" />
-            </button>
-          </form>
-        </div>
-      )}
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Nhập câu hỏi của bạn…"
+                aria-label="Câu hỏi cho trợ lý"
+                className="min-h-11 flex-1 rounded-full border border-input bg-card px-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-foreground"
+              />
+              <Button type="submit" size="icon" disabled={sending || !input.trim()} aria-label="Gửi">
+                <HiOutlinePaperAirplane className="rotate-90" />
+              </Button>
+            </form>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </>
   );
 }

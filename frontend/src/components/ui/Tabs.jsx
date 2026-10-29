@@ -1,25 +1,19 @@
-import clsx from "clsx";
+import { VercelTabs } from "@/components/kit/vercel-tabs";
 
-export default function Tabs({ tabs, active, onChange, className }) {
+// Radix Tabs không nhận value rỗng, nên tab "Tất cả" (value "") được đổi qua khóa nội bộ.
+const ALL = "__all";
+const toKey = (v) => (v === "" || v == null ? ALL : String(v));
+const fromKey = (k) => (k === ALL ? "" : k);
+
+/** API cũ ({ tabs, active, onChange }) trên nền JolyUI Vercel Tabs. */
+export default function Tabs({ tabs, active, onChange, className, ariaLabel = "Bộ lọc" }) {
   return (
-    <div className={clsx("flex items-center gap-1 rounded-full bg-slate-100 p-1 w-fit", className)}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          onClick={() => onChange(tab.value)}
-          className={clsx(
-            "rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-            active === tab.value ? "bg-white text-teal-600 shadow-soft" : "text-ink-faint hover:text-ink"
-          )}
-        >
-          {tab.label}
-          {tab.count != null && (
-            <span className={clsx("ml-1.5 text-xs", active === tab.value ? "text-teal-500" : "text-slate-400")}>
-              {tab.count}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
+    <VercelTabs
+      tabs={tabs.map((t) => ({ ...t, value: toKey(t.value) }))}
+      value={toKey(active)}
+      onValueChange={(k) => onChange(fromKey(k))}
+      className={className}
+      ariaLabel={ariaLabel}
+    />
   );
 }

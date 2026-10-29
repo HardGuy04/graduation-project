@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 
 import AuthLayout from "./layouts/AuthLayout";
 import AdminLayout from "./layouts/AdminLayout";
@@ -33,8 +33,7 @@ import DoctorProfile from "./pages/doctor/DoctorProfile";
 
 import PatientDashboard from "./pages/patient/PatientDashboard";
 import PatientBookAppointment from "./pages/patient/PatientBookAppointment";
-import PatientAppointments from "./pages/patient/PatientAppointments";
-import PatientRecords from "./pages/patient/PatientRecords";
+import PatientVisits from "./pages/patient/PatientVisits";
 import PatientInvoices from "./pages/patient/PatientInvoices";
 import PatientProfile from "./pages/patient/PatientProfile";
 
@@ -55,7 +54,7 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <AdminDashboard />, handle: { title: "Tổng quan", subtitle: "Toàn cảnh hoạt động phòng khám hôm nay" } },
+      { index: true, element: <AdminDashboard />, handle: { title: "Tổng quan", subtitle: "Toàn cảnh hoạt động phòng khám hôm nay", hero: true } },
       { path: "appointments", element: <AdminAppointments />, handle: { title: "Lịch hẹn", subtitle: "Quản lý và xử lý lịch hẹn của bệnh nhân" } },
       { path: "doctors", element: <AdminDoctors />, handle: { title: "Bác sĩ", subtitle: "Quản lý danh sách bác sĩ trong hệ thống" } },
       { path: "doctors/:id", element: <AdminDoctorDetail />, handle: { title: "Chi tiết bác sĩ" } },
@@ -94,8 +93,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <PatientDashboard />, handle: { title: "Tổng quan", subtitle: "Theo dõi lịch khám và sức khỏe của bạn" } },
       { path: "book", element: <PatientBookAppointment />, handle: { title: "Đặt lịch khám" } },
-      { path: "appointments", element: <PatientAppointments />, handle: { title: "Lịch hẹn của tôi" } },
-      { path: "records", element: <PatientRecords />, handle: { title: "Lịch sử khám bệnh" } },
+      { path: "visits", element: <PatientVisits />, handle: { title: "Lịch khám" } },
+      { path: "appointments", element: <Navigate to="/patient/visits?tab=appointments" replace /> },
+      { path: "records", element: <Navigate to="/patient/visits?tab=history" replace /> },
       { path: "invoices", element: <PatientInvoices />, handle: { title: "Hóa đơn" } },
       { path: "profile", element: <PatientProfile />, handle: { title: "Hồ sơ cá nhân" } },
     ],

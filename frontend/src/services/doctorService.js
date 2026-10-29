@@ -1,7 +1,7 @@
 import http, { unwrap } from "../api/http";
 import {
   toUiAppointment, toUiRecord, toUiSchedule, toUiLeave, toUiPrescription,
-  apptStatusToApi,
+  apptStatusToApi, dowToApi,
 } from "../api/adapters";
 
 async function attachRecord(appt) {
@@ -88,8 +88,44 @@ export const doctorService = {
     return { success: true, data: res.data.map(toUiSchedule) };
   },
 
+  async createSchedule(payload) {
+    const res = unwrap(await http.post("/doctor/schedules", scheduleBody(payload)));
+    return { success: true, data: toUiSchedule(res.data) };
+  },
+
+  async updateSchedule(id, payload) {
+    const res = unwrap(await http.patch(`/doctor/schedules/${id}`, scheduleBody(payload)));
+    return { success: true, data: toUiSchedule(res.data) };
+  },
+
+  async deleteSchedule(id) {
+    await http.delete(`/doctor/schedules/${id}`);
+    return { success: true, data: null };
+  },
+
   async getMyLeaves() {
     const res = unwrap(await http.get("/doctor/leaves", { params: { limit: 100 } }));
     return { success: true, data: res.data.map(toUiLeave) };
   },
+
+  async createLeave({ date, reason }) {
+    const res = unwrap(await http.post("/doctor/leaves", { leaveDate: date, reason }));
+    return { success: true, data: toUiLeave(res.data) };
+  },
+
+  async deleteLeave(id) {
+    await http.delete(`/doctor/leaves/${id}`);
+    return { success: true, data: null };
+  },
 };
+
+function scheduleBody(p) {
+  return {
+    dayOfWeek: p.dayOfWeek != null ? dowToApi(p.dayOfWeek) : undefined,
+    startTime: p.startTime,
+    endTime: p.endTime,
+    slotDuration: p.slotDuration != null ? Number(p.slotDuration) : undefined,
+    maxPatient: p.maxPatients != null ? Number(p.maxPatients) : undefined,
+    status: p.status ? String(p.status).toUpperCase() : undefined,
+  };
+}

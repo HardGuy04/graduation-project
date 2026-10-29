@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { HiOutlineCreditCard, HiOutlineCheckCircle, HiOutlineExclamation, HiOutlineShieldCheck, HiOutlinePlus } from "react-icons/hi";
-import clsx from "clsx";
-import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import Modal from "../../components/ui/Modal";
-import { Input, FieldError } from "../../components/ui/Field";
-import { InvoiceStatusBadge } from "../../components/ui/StatusBadge";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
+import { HiOutlineCreditCard, HiOutlineCheckCircle, HiOutlineShieldCheck, HiOutlinePlus, HiOutlineReceiptTax } from "react-icons/hi";
+import { Button } from "@/components/kit/button";
+import { Card, Tile } from "../../components/app/Surface";
+import { InvoiceBadge } from "../../components/app/Badge";
+import { FormRow, Input } from "../../components/app/Field";
+import { AppDialog } from "../../components/app/Dialog";
+import { Empty, ErrorNote, Loading } from "../../components/app/Feedback";
+import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
@@ -44,48 +44,64 @@ export default function PatientInvoices() {
     load();
   }, []); // eslint-disable-line
 
-  if (loading) return <Spinner label="Đang tải hóa đơn của bạn…" />;
+  if (loading) return <Loading label="Đang tải hóa đơn của bạn…" />;
+
+  const unpaid = list.filter((i) => i.status === "unpaid");
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-teal-700 border-none text-white">
-        <div className="flex items-center gap-3.5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl2 bg-teal-500/60 shrink-0">
-            <HiOutlineShieldCheck className="h-6 w-6" />
-          </div>
+    <div className="space-y-8">
+      <PageHeader eyebrow="Thanh toán" title="Hóa đơn" description="Thanh toán hóa đơn khám bằng số dư ví MediPay hoặc nạp thêm qua VNPay." />
+
+      <section className="flex flex-col gap-6 rounded-card bg-banner p-6 text-foreground sm:flex-row sm:items-center sm:justify-between sm:p-8">
+        <div className="flex items-center gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/70 text-accent">
+            <HiOutlineShieldCheck aria-hidden className="h-6 w-6" />
+          </span>
           <div>
-            <p className="text-sm text-teal-100">Số dư khả dụng · MediPay Wallet</p>
-            <p className="text-2xl font-extrabold font-display">{formatCurrency(balance)}</p>
+            <p className="text-sm text-muted-foreground">Số dư khả dụng · MediPay Wallet</p>
+            <p className="text-display-md tabular-nums">{formatCurrency(balance)}</p>
           </div>
         </div>
-        <Button variant="gold" size="sm" onClick={() => setTopUpOpen(true)}>
-          <HiOutlinePlus className="h-4 w-4" /> Nạp tiền
-        </Button>
-      </Card>
+        <div className="flex flex-wrap items-center gap-3">
+          {unpaid.length > 0 && (
+            <span className="text-sm text-muted-foreground">{unpaid.length} hóa đơn chờ thanh toán</span>
+          )}
+          <Button onClick={() => setTopUpOpen(true)}>
+            <HiOutlinePlus /> Nạp tiền
+          </Button>
+        </div>
+      </section>
 
       {list.length === 0 ? (
-        <EmptyState title="Bạn chưa có hóa đơn nào" />
+        <Empty icon={HiOutlineReceiptTax} title="Bạn chưa có hóa đơn nào" />
       ) : (
-        <div className="space-y-4">
-          {list.map((inv) => (
-            <Card key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="font-bold text-ink">Hóa đơn #{inv.id}</p>
-                <p className="text-sm text-ink-faint">{formatDate(inv.createdAt)} · {inv.items.length} khoản mục</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-xl font-extrabold font-display text-ink">{formatCurrency(inv.amount)}</span>
-                <InvoiceStatusBadge status={inv.status} />
-                {inv.status === "unpaid" && (
-                  <Button size="sm" onClick={() => setPayTarget(inv)}><HiOutlineCreditCard className="h-4 w-4" /> Thanh toán online</Button>
-                )}
-              </div>
-            </Card>
+        <ul className="grid gap-3">
+          {list.map((inv, i) => (
+            <li key={inv.id}>
+                <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-tile bg-tile">
+                      <HiOutlineReceiptTax aria-hidden className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold">Hóa đơn #{inv.id}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(inv.createdAt)} · {inv.items.length} khoản mục</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                    <span className="text-headline tabular-nums">{formatCurrency(inv.amount)}</span>
+                    <InvoiceBadge status={inv.status} />
+                    {inv.status === "unpaid" && (
+                      <Button size="sm" onClick={() => setPayTarget(inv)}><HiOutlineCreditCard /> Thanh toán</Button>
+                    )}
+                  </div>
+                </Card>
+              </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      <PayModal
+      <PayDialog
         invoice={payTarget}
         balance={balance}
         patientId={user.id}
@@ -94,7 +110,7 @@ export default function PatientInvoices() {
         onSuccess={(newBalance) => { setBalance(newBalance); setPayTarget(null); load(); }}
       />
 
-      <TopUpModal
+      <TopUpDialog
         open={topUpOpen}
         patientId={user.id}
         onClose={() => setTopUpOpen(false)}
@@ -104,9 +120,21 @@ export default function PatientInvoices() {
   );
 }
 
-function PayModal({ invoice, balance, patientId, onClose, onRequestTopUp, onSuccess }) {
+function SuccessState({ title, children }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-6 text-center" role="status">
+      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <HiOutlineCheckCircle aria-hidden className="h-8 w-8" />
+      </span>
+      <p className="text-title">{title}</p>
+      <p className="text-sm text-muted-foreground">{children}</p>
+    </div>
+  );
+}
+
+function PayDialog({ invoice, balance, patientId, onClose, onRequestTopUp, onSuccess }) {
   const [amount, setAmount] = useState("");
-  const [step, setStep] = useState("form"); // form | success
+  const [step, setStep] = useState("form");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -142,69 +170,60 @@ function PayModal({ invoice, balance, patientId, onClose, onRequestTopUp, onSucc
   }
 
   return (
-    <Modal open={!!invoice} onClose={onClose} title="Thanh toán trực tuyến" subtitle="Mô phỏng chuyển khoản qua MediPay Wallet" width="max-w-sm">
+    <AppDialog
+      open={!!invoice}
+      onClose={onClose}
+      title="Thanh toán hóa đơn"
+      description="Thanh toán bằng số dư ví MediPay"
+      size="sm"
+      footer={invoice && step !== "success" && (
+        <Button className="w-full" onClick={handleTransfer} loading={submitting} disabled={insufficient}>
+          Xác nhận thanh toán
+        </Button>
+      )}
+    >
       {invoice && (
         step === "success" ? (
-          <div className="flex flex-col items-center gap-3 py-6 text-center animate-fade-in">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-leaf-50">
-              <HiOutlineCheckCircle className="h-9 w-9 text-leaf-500" />
-            </div>
-            <p className="text-lg font-bold text-ink">Chuyển khoản thành công!</p>
-            <p className="text-sm text-ink-faint">Đã thanh toán {formatCurrency(invoice.amount)} cho hóa đơn #{invoice.id}</p>
-          </div>
+          <SuccessState title="Thanh toán thành công!">
+            Đã thanh toán {formatCurrency(invoice.amount)} cho hóa đơn #{invoice.id}
+          </SuccessState>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-xl2 border border-slate-100 bg-slate-50/70 p-4 space-y-2.5">
-              <div className="flex justify-between text-sm">
-                <span className="text-ink-faint">Số dư khả dụng</span>
-                <span className="font-bold text-ink">{formatCurrency(balance)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-ink-faint">Nội dung</span>
-                <span className="font-medium text-ink-soft">Thanh toán HĐ #{invoice.id}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-ink-faint">Số tiền hóa đơn</span>
-                <span className="font-bold text-teal-600">{formatCurrency(invoice.amount)}</span>
-              </div>
-            </div>
+            <Tile className="space-y-2.5">
+              <Row label="Số dư khả dụng" value={formatCurrency(balance)} />
+              <Row label="Nội dung" value={`Thanh toán HĐ #${invoice.id}`} muted />
+              <Row label="Số tiền hóa đơn" value={formatCurrency(invoice.amount)} />
+            </Tile>
 
             {insufficient && (
-              <div className="rounded-lg bg-clay-50 px-3.5 py-2.5 text-xs text-clay-500">
-                <div className="flex items-start gap-2">
-                  <HiOutlineExclamation className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Số dư ví hiện không đủ để thanh toán hóa đơn này.</span>
-                </div>
-                <button type="button" onClick={onRequestTopUp} className="mt-1.5 ml-6 font-semibold text-teal-600 hover:text-teal-700">
+              <ErrorNote>
+                Số dư ví hiện không đủ để thanh toán hóa đơn này.
+                <Button variant="link" size="sm" onClick={onRequestTopUp} className="ml-1 h-auto min-h-0 text-destructive">
                   Nạp tiền vào ví ngay →
-                </button>
-              </div>
+                </Button>
+              </ErrorNote>
             )}
 
-            <div>
-              <label className="block text-sm font-semibold text-ink mb-1.5">Nhập số tiền cần chuyển khoản</label>
-              <Input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Nhập số tiền…"
-                error={!!error}
-              />
-              <FieldError>{error}</FieldError>
-            </div>
-
-            <Button className="w-full" onClick={handleTransfer} loading={submitting} disabled={insufficient}>
-              Xác nhận chuyển khoản
-            </Button>
-            <p className="text-[11px] text-center text-ink-faint">Thanh toán bằng số dư ví MediPay.</p>
+            <FormRow label="Số tiền thanh toán" error={error}>
+              <Input type="number" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Nhập số tiền…" />
+            </FormRow>
           </div>
         )
       )}
-    </Modal>
+    </AppDialog>
   );
 }
 
-function TopUpModal({ open, patientId, onClose, onSuccess }) {
+function Row({ label, value, muted }) {
+  return (
+    <div className="flex justify-between gap-4 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={muted ? "font-medium" : "font-bold tabular-nums"}>{value}</span>
+    </div>
+  );
+}
+
+function TopUpDialog({ open, patientId, onClose, onSuccess }) {
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState("form");
   const [error, setError] = useState("");
@@ -236,54 +255,47 @@ function TopUpModal({ open, patientId, onClose, onSuccess }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nạp tiền vào ví" subtitle="Có cổng VNPay thì chuyển sang trang thanh toán; chưa cấu hình thì ghi nhận mô phỏng" width="max-w-sm">
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      title="Nạp tiền vào ví"
+      description="Có cổng VNPay thì chuyển sang trang thanh toán; chưa cấu hình thì ghi nhận mô phỏng"
+      size="sm"
+      footer={step !== "success" && (
+        <Button className="w-full" onClick={handleConfirm} loading={submitting}>
+          Xác nhận nạp tiền
+        </Button>
+      )}
+    >
       {step === "success" ? (
-        <div className="flex flex-col items-center gap-3 py-6 text-center animate-fade-in">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-leaf-50">
-            <HiOutlineCheckCircle className="h-9 w-9 text-leaf-500" />
-          </div>
-          <p className="text-lg font-bold text-ink">Nạp tiền thành công!</p>
-          <p className="text-sm text-ink-faint">Đã cộng {formatCurrency(Number(amount))} vào ví MediPay Wallet</p>
-        </div>
+        <SuccessState title="Nạp tiền thành công!">
+          Đã cộng {formatCurrency(Number(amount))} vào ví MediPay Wallet
+        </SuccessState>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Chọn nhanh số tiền</label>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="mb-2 text-sm font-semibold">Chọn nhanh số tiền</p>
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Số tiền gợi ý">
               {QUICK_AMOUNTS.map((v) => (
-                <button
+                <Button
                   key={v}
-                  type="button"
+                  variant={Number(amount) === v ? "default" : "outline"}
+                  aria-pressed={Number(amount) === v}
                   onClick={() => setAmount(String(v))}
-                  className={clsx(
-                    "rounded-lg border px-3 py-2 text-sm font-semibold transition",
-                    Number(amount) === v ? "border-teal-500 bg-teal-500 text-white" : "border-slate-200 text-ink-soft hover:border-teal-300"
-                  )}
+                  className="tabular-nums"
                 >
                   {formatCurrency(v)}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-1.5">Hoặc nhập số tiền khác</label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Nhập số tiền muốn nạp…"
-              error={!!error}
-            />
-            <FieldError>{error}</FieldError>
-          </div>
-
-          <Button className="w-full" onClick={handleConfirm} loading={submitting}>
-            Xác nhận nạp tiền
-          </Button>
-          <p className="text-[11px] text-center text-ink-faint">Giao dịch mô phỏng cho mục đích demo, không phát sinh tiền thật.</p>
+          <FormRow label="Hoặc nhập số tiền khác" error={error}>
+            <Input type="number" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Nhập số tiền muốn nạp…" />
+          </FormRow>
+          <p className="text-center text-[11px] text-muted-foreground">Giao dịch mô phỏng cho mục đích demo, không phát sinh tiền thật.</p>
         </div>
       )}
-    </Modal>
+    </AppDialog>
   );
 }

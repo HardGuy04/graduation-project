@@ -7,19 +7,14 @@ import Button from "../../components/ui/Button";
 import { FormRow, Input } from "../../components/ui/Field";
 import { useAuth } from "../../context/AuthContext";
 
-const DEMO_ACCOUNTS = [
-  { role: "Admin", email: "test-seed-admin@example.com" },
-  { role: "Bác sĩ", email: "test-seed-doctor1@example.com" },
-];
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const {
-    register, handleSubmit, setValue, formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { email: "", password: "Test@12345" } });
+    register, handleSubmit, formState: { errors, isSubmitting },
+  } = useForm({ defaultValues: { email: "", password: "" } });
 
   async function onSubmit(values) {
     try {
@@ -82,23 +77,6 @@ export default function Login() {
           Đăng ký bệnh nhân mới
         </Link>
       </p>
-
-      <div className="mt-8 rounded-xl2 border border-slate-100 bg-slate-50/70 p-4">
-        <p className="text-xs font-semibold uppercase text-ink-faint tracking-wide mb-2">Tài khoản thử (mật khẩu: Test@12345)</p>
-        <div className="space-y-1.5">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.email}
-              type="button"
-              onClick={() => setValue("email", acc.email)}
-              className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-white transition"
-            >
-              <span className="font-medium text-ink-soft">{acc.role}</span>
-              <span className="text-teal-600">{acc.email}</span>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

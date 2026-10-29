@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { HiOutlineSearch, HiOutlineEye, HiOutlineLockClosed, HiOutlineLockOpen } from "react-icons/hi";
+import { HiOutlineEye, HiOutlineLockClosed, HiOutlineLockOpen } from "react-icons/hi";
 import Button from "../../components/ui/Button";
 import { AccountStatusBadge } from "../../components/ui/StatusBadge";
 import { TableShell, Th, Td, Tr } from "../../components/ui/Table";
-import { Input } from "../../components/ui/Field";
+import { SearchInput } from "../../components/app/Field";
 import { EmptyState, Spinner } from "../../components/ui/Feedback";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Avatar from "../../components/ui/Avatar";
@@ -36,11 +36,8 @@ export default function AdminPatients() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="relative max-w-xs">
-        <HiOutlineSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-        <Input placeholder="Tìm theo tên, SĐT, email…" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
+    <div className="space-y-5">
+      <SearchInput className="max-w-xs" label="Tìm bệnh nhân" placeholder="Tìm theo tên, SĐT, email…" value={q} onChange={(e) => setQ(e.target.value)} />
 
       {loading ? (
         <Spinner label="Đang tải danh sách bệnh nhân…" />
@@ -58,22 +55,28 @@ export default function AdminPatients() {
               <Tr key={p.id}>
                 <Td>
                   <div className="flex items-center gap-3">
-                    <Avatar name={p.fullName} color="#3F9683" size="sm" />
+                    <Avatar name={p.fullName} src={p.avatarUrl} size="sm" />
                     <span className="font-semibold">{p.fullName}</span>
                   </div>
                 </Td>
                 <Td>{GENDER[p.gender] || "—"}</Td>
                 <Td>{formatDate(p.dateOfBirth)}</Td>
-                <Td>{p.phone}<br /><span className="text-xs text-ink-faint">{p.email}</span></Td>
+                <Td>{p.phone}<br /><span className="text-xs text-muted-foreground">{p.email}</span></Td>
                 <Td><AccountStatusBadge status={p.status} /></Td>
                 <Td>
                   <div className="flex items-center justify-end gap-1.5">
-                    <Link to={`/admin/patients/${p.id}`} className="p-2 rounded-lg text-ink-faint hover:bg-slate-100 hover:text-teal-600" title="Xem chi tiết">
-                      <HiOutlineEye className="h-4 w-4" />
-                    </Link>
-                    <button onClick={() => setToggleTarget(p)} className="p-2 rounded-lg text-ink-faint hover:bg-slate-100 hover:text-clay-500" title={p.status === "active" ? "Khóa" : "Mở khóa"}>
-                      {p.status === "active" ? <HiOutlineLockClosed className="h-4 w-4" /> : <HiOutlineLockOpen className="h-4 w-4" />}
-                    </button>
+                    <Button asChild variant="ghost" size="icon" title="Xem chi tiết">
+                      <Link to={`/admin/patients/${p.id}`} aria-label={`Xem hồ sơ ${p.fullName}`}><HiOutlineEye /></Link>
+                    </Button>
+                    <Button
+                      variant={p.status === "active" ? "ghost-danger" : "ghost"}
+                      size="icon"
+                      onClick={() => setToggleTarget(p)}
+                      title={p.status === "active" ? "Khóa" : "Mở khóa"}
+                      aria-label={`${p.status === "active" ? "Khóa tài khoản" : "Mở khóa"} ${p.fullName}`}
+                    >
+                      {p.status === "active" ? <HiOutlineLockClosed /> : <HiOutlineLockOpen />}
+                    </Button>
                   </div>
                 </Td>
               </Tr>

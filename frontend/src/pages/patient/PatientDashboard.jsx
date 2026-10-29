@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineCalendar, HiOutlineCreditCard, HiOutlineDocumentText, HiOutlinePlusCircle, HiOutlineArrowRight } from "react-icons/hi";
-import Card, { CardHeader } from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import { AppointmentStatusBadge, InvoiceStatusBadge } from "../../components/ui/StatusBadge";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
+import { HiOutlineCalendar, HiOutlineCreditCard, HiOutlinePlus, HiOutlineArrowRight, HiOutlineClipboardList } from "react-icons/hi";
+import { Button } from "@/components/kit/button";
+import { Card, CardHeader, TimeChip } from "../../components/app/Surface";
+import { AppointmentBadge, Badge } from "../../components/app/Badge";
+import { StatTile } from "../../components/app/StatTile";
+import { Empty, Loading } from "../../components/app/Feedback";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+
+const weekday = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("vi-VN", { weekday: "long" });
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -24,69 +27,129 @@ export default function PatientDashboard() {
     })();
   }, [user.id]);
 
-  if (loading) return <Spinner label="Đang tải thông tin của bạn…" />;
+  if (loading) return <Loading label="Đang tải thông tin của bạn…" />;
 
-  const upcoming = appointments.filter((a) => ["pending", "confirmed"].includes(a.status)).slice(0, 3);
+  const upcoming = appointments
+    .filter((a) => ["pending", "confirmed"].includes(a.status))
+    .sort((x, y) => `${x.date} ${x.startTime}`.localeCompare(`${y.date} ${y.startTime}`))
+    .slice(0, 3);
+  const next = upcoming[0];
   const unpaid = invoices.filter((i) => i.status === "unpaid");
+  const unpaidTotal = unpaid.reduce((s, i) => s + i.amount, 0);
+  const completed = appointments.filter((a) => a.status === "completed").length;
+  const firstName = user.fullName?.split(" ").slice(-1)[0];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <Card className="bg-teal-700 border-none text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold font-display">Xin chào, {user.fullName.split(" ").slice(-1)[0]}! 👋</h2>
-          <p className="text-teal-100 text-sm mt-1">Bạn có {upcoming.length} lịch hẹn sắp tới và {unpaid.length} hóa đơn chưa thanh toán.</p>
+    <div className="space-y-8">
+      <section className="relative grid gap-8 overflow-hidden rounded-card bg-banner px-6 py-9 text-tertiary sm:px-9 sm:py-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center lg:gap-12">
+        <div aria-hidden className="pointer-events-none absolute -left-20 -top-28 h-72 w-72 rounded-full bg-white/25" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-44 -right-24 h-96 w-96 rounded-full border border-white/60" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -right-8 h-64 w-64 rounded-full border border-white/40" />
+
+        <div className="relative">
+          <span className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold leading-none">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+            {upcoming.length > 0 ? `${upcoming.length} lịch hẹn sắp tới` : "Chưa có lịch hẹn"}
+          </span>
+          <h1 className="max-w-xl text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2.5rem]">
+            Xin chào, {firstName}.<br />
+            Sức khỏe của bạn, gọn trong một nơi.
+          </h1>
+          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+            Theo dõi lịch khám, hồ sơ bệnh án và hóa đơn của bạn ở một nơi.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Button asChild size="lg" className="bg-tertiary hover:bg-tertiary/90">
+              <Link to="/patient/book"><HiOutlinePlus /> Đặt lịch khám mới</Link>
+            </Button>
+            <Button asChild variant="frost" size="lg">
+              <Link to="/patient/visits">Xem lịch khám</Link>
+            </Button>
+          </div>
         </div>
-        <Link to="/patient/book">
-          <Button variant="gold" size="lg"><HiOutlinePlusCircle className="h-5 w-5" /> Đặt lịch khám mới</Button>
-        </Link>
-      </Card>
+
+        {next && (
+          <div className="relative rounded-card bg-card p-5 shadow-[0_16px_40px_-20px_rgba(78,99,90,0.35)]">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Lịch khám kế tiếp</p>
+              <AppointmentBadge status={next.status} />
+            </div>
+            <div className="flex items-center gap-3">
+              <TimeChip time={next.startTime} date={formatDate(next.date, { day: "2-digit", month: "2-digit" })} className="bg-tertiary" />
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{next.doctorName}</p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {next.doctorSpecialty} · <span className="capitalize">{weekday(next.date)}</span>
+                </p>
+              </div>
+            </div>
+            {next.reason && (
+              <p className="mt-4 rounded-field bg-tile px-3.5 py-3 text-sm text-muted-foreground">Lý do: {next.reason}</p>
+            )}
+            <Button asChild variant="accent" className="mt-4 w-full">
+              <Link to="/patient/visits?tab=appointments">Xem chi tiết</Link>
+            </Button>
+          </div>
+        )}
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatTile className="h-full" icon={HiOutlineCalendar} label="Lịch hẹn sắp tới" value={upcoming.length} />
+        <StatTile className="h-full" icon={HiOutlineClipboardList} label="Lần khám đã hoàn thành" value={completed} />
+        <StatTile className="h-full" icon={HiOutlineCreditCard} label="Cần thanh toán" value={formatCurrency(unpaidTotal)} hint={`${unpaid.length} hóa đơn`} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card padded={false}>
-          <div className="flex items-center justify-between px-6 pt-6 mb-3">
-            <h3 className="text-lg font-bold text-ink font-display">Lịch hẹn sắp tới</h3>
-            <Link to="/patient/appointments" className="flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-700">
-              Xem tất cả <HiOutlineArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+        <Card>
+          <CardHeader
+            title="Lịch hẹn sắp tới"
+            action={
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/patient/visits?tab=appointments">Xem tất cả <HiOutlineArrowRight /></Link>
+              </Button>
+            }
+          />
           {upcoming.length === 0 ? (
-            <div className="px-6 pb-6"><EmptyState icon={HiOutlineCalendar} title="Chưa có lịch hẹn nào" description="Đặt lịch khám ngay để được bác sĩ tư vấn." /></div>
+            <Empty icon={HiOutlineCalendar} title="Chưa có lịch hẹn nào" description="Đặt lịch khám để được bác sĩ tư vấn." />
           ) : (
-            <div className="divide-y divide-slate-100 px-2 pb-2">
+            <ul className="divide-y divide-border">
               {upcoming.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-4 px-4 py-3.5">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink truncate">{a.doctorName}</p>
-                    <p className="text-xs text-ink-faint truncate">{a.doctorSpecialty} · {formatDate(a.date)} lúc {a.startTime}</p>
+                <li key={a.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
+                  <TimeChip time={a.startTime} date={formatDate(a.date, { day: "2-digit", month: "2-digit" })} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{a.doctorName}</p>
+                    <p className="truncate text-sm text-muted-foreground">{a.doctorSpecialty}</p>
                   </div>
-                  <AppointmentStatusBadge status={a.status} />
-                </div>
+                  <AppointmentBadge status={a.status} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </Card>
 
-        <Card padded={false}>
-          <div className="flex items-center justify-between px-6 pt-6 mb-3">
-            <h3 className="text-lg font-bold text-ink font-display">Hóa đơn chưa thanh toán</h3>
-            <Link to="/patient/invoices" className="flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-700">
-              Xem tất cả <HiOutlineArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+        <Card>
+          <CardHeader
+            title="Hóa đơn chưa thanh toán"
+            action={
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/patient/invoices">Xem tất cả <HiOutlineArrowRight /></Link>
+              </Button>
+            }
+          />
           {unpaid.length === 0 ? (
-            <div className="px-6 pb-6"><EmptyState icon={HiOutlineCreditCard} title="Không có hóa đơn nào cần thanh toán" /></div>
+            <Empty icon={HiOutlineCreditCard} title="Không có hóa đơn nào cần thanh toán" />
           ) : (
-            <div className="divide-y divide-slate-100 px-2 pb-2">
+            <ul className="divide-y divide-border">
               {unpaid.map((inv) => (
-                <div key={inv.id} className="flex items-center justify-between gap-4 px-4 py-3.5">
+                <li key={inv.id} className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
                   <div>
-                    <p className="font-semibold text-ink">Hóa đơn #{inv.id}</p>
-                    <p className="text-xs text-ink-faint">{formatDate(inv.createdAt)}</p>
+                    <p className="font-semibold">Hóa đơn #{inv.id}</p>
+                    <p className="text-sm text-muted-foreground">{formatDate(inv.createdAt)}</p>
                   </div>
-                  <span className="font-bold text-gold-600">{formatCurrency(inv.amount)}</span>
-                </div>
+                  <span className="font-bold tabular-nums">{formatCurrency(inv.amount)}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </Card>
       </div>

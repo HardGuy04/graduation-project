@@ -41,15 +41,25 @@ export const INVOICE_STATUS_LABEL = {
 
 export const ROOM_STATUS_LABEL = {
   available: "Sẵn sàng",
-  in_use: "Đang sử dụng",
   maintenance: "Bảo trì",
+  inactive: "Ngưng dùng",
+  // Giữ nhãn cũ nếu còn dữ liệu mock
+  in_use: "Đang sử dụng",
 };
 
 export const ROOM_STATUS_STYLE = {
   available: "bg-leaf-50 text-leaf-600 border-leaf-400/30",
-  in_use: "bg-gold-50 text-gold-600 border-gold-200",
   maintenance: "bg-clay-50 text-clay-500 border-clay-400/30",
+  inactive: "bg-slate-100 text-slate-500 border-slate-200",
+  in_use: "bg-gold-50 text-gold-600 border-gold-200",
 };
+
+/** Trạng thái phòng khớp enum backend (AVAILABLE | MAINTENANCE | INACTIVE). */
+export const ROOM_STATUS_OPTIONS = [
+  { value: "available", api: "AVAILABLE", label: ROOM_STATUS_LABEL.available },
+  { value: "maintenance", api: "MAINTENANCE", label: ROOM_STATUS_LABEL.maintenance },
+  { value: "inactive", api: "INACTIVE", label: ROOM_STATUS_LABEL.inactive },
+];
 
 export const WEEKDAY_LABEL = {
   0: "Chủ nhật",
@@ -66,6 +76,8 @@ export const GENDER_LABEL = {
   female: "Nữ",
   other: "Khác",
 };
+
+export const GENDER_OPTIONS = Object.entries(GENDER_LABEL).map(([value, label]) => ({ value, label }));
 
 export const TOKEN_KEY = "medicare_hub_token";
 export const REFRESH_KEY = "medicare_hub_refresh";

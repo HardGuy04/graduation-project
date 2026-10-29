@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { HiOutlineSearch, HiOutlineArrowLeft } from "react-icons/hi";
-import Card, { CardHeader } from "../../components/ui/Card";
+import { HiOutlineArrowLeft, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineChevronRight } from "react-icons/hi";
+import { Button } from "@/components/kit/button";
 import Avatar from "../../components/ui/Avatar";
-import { Input } from "../../components/ui/Field";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
+import { Card, Tile } from "../../components/app/Surface";
+import { Badge } from "../../components/app/Badge";
+import { SearchInput } from "../../components/app/Field";
+import { Empty, Loading, SkeletonList } from "../../components/app/Feedback";
+import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import { doctorService } from "../../services/doctorService";
-import { formatDate, formatDateLong } from "../../utils/formatters";
+import { formatDateLong } from "../../utils/formatters";
 
 export default function DoctorPatients() {
   const { user } = useAuth();
@@ -40,76 +43,101 @@ export default function DoctorPatients() {
     setRecords(res.data);
   }
 
-  if (loading) return <Spinner label="Đang tải danh sách bệnh nhân…" />;
+  if (loading) return <Loading label="Đang tải danh sách bệnh nhân…" />;
 
   if (selected) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <button onClick={() => setSelected(null)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-faint hover:text-teal-600">
-          <HiOutlineArrowLeft className="h-4 w-4" /> Quay lại danh sách bệnh nhân
-        </button>
+      <div className="space-y-6">
+        <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="-ml-3">
+          <HiOutlineArrowLeft /> Danh sách bệnh nhân
+        </Button>
 
-        <Card className="flex items-center gap-4">
-          <Avatar name={selected.name} color="#3F9683" size="lg" />
-          <div>
-            <h2 className="text-xl font-extrabold font-display text-ink">{selected.name}</h2>
-            <p className="text-sm text-ink-faint">SĐT: {selected.phone} · {selected.visits} lượt khám</p>
+        <Card className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <Avatar name={selected.name} color="#4E635A" size="lg" />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-headline">{selected.name}</h1>
+            <p className="text-sm text-muted-foreground">SĐT: {selected.phone || "—"}</p>
           </div>
+          <Badge tone="solid">{selected.visits} lượt khám</Badge>
         </Card>
 
-        <div>
-          <h3 className="font-bold text-ink mb-3">Lịch sử khám bệnh</h3>
+        <section aria-labelledby="history-title">
+          <h2 id="history-title" className="mb-4 text-title">Lịch sử khám bệnh</h2>
           {records === null ? (
-            <Spinner />
+            <SkeletonList rows={2} />
           ) : records.length === 0 ? (
-            <EmptyState title="Chưa có hồ sơ bệnh án nào" />
+            <Empty icon={HiOutlineClipboardList} title="Chưa có hồ sơ bệnh án nào" />
           ) : (
-            <div className="space-y-4">
-              {records.map((r) => (
-                <Card key={r.id}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">{formatDateLong(r.createdAt)}</p>
-                  <h4 className="mt-1 font-bold text-ink">{r.diagnosis || <span className="italic text-ink-faint font-normal">Chưa xác định</span>}</h4>
-                  <p className="text-sm text-ink-faint mt-1">{r.symptoms}</p>
-                  {r.prescription && (
-                    <div className="mt-3 rounded-xl bg-slate-50 p-3.5">
-                      <p className="text-xs font-semibold text-ink-soft mb-1.5">Đơn thuốc</p>
-                      <ul className="text-sm text-ink-faint space-y-1">
-                        {r.prescription.details.map((d, i) => <li key={i}>{d.medicineName} — {d.dosage}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                </Card>
+            <ol className="relative space-y-4 border-l border-border pl-6">
+              {records.map((r, i) => (
+                <li key={r.id} className="relative">
+                    <span aria-hidden className="absolute -left-[31px] top-6 h-3 w-3 rounded-full border-2 border-background bg-primary" />
+                    <Card as="article">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">{formatDateLong(r.createdAt)}</p>
+                      <h3 className="mt-1 text-title">
+                        {r.diagnosis || <span className="font-normal italic text-muted-foreground">Chưa xác định</span>}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{r.symptoms}</p>
+                      {r.prescription && (
+                        <Tile className="mt-4">
+                          <p className="mb-1.5 text-xs font-semibold">Đơn thuốc</p>
+                          <ul className="space-y-1 text-sm text-muted-foreground">
+                            {r.prescription.details.map((d, j) => <li key={j}>{d.medicineName} — {d.dosage}</li>)}
+                          </ul>
+                        </Tile>
+                      )}
+                    </Card>
+                  </li>
               ))}
-            </div>
+            </ol>
           )}
-        </div>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="relative max-w-xs">
-        <HiOutlineSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-        <Input placeholder="Tìm bệnh nhân theo tên, SĐT…" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Bệnh nhân"
+        title="Tra cứu bệnh nhân"
+        description="Xem lịch sử khám của những bệnh nhân bạn phụ trách."
+        actions={
+          <SearchInput
+            label="Tìm bệnh nhân"
+            placeholder="Tìm theo tên, số điện thoại…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="w-full sm:w-80"
+          />
+        }
+      />
 
       {patients.length === 0 ? (
-        <EmptyState title="Chưa có bệnh nhân nào" description="Bệnh nhân sẽ xuất hiện tại đây sau khi có lịch hẹn với bạn." />
+        <Empty
+          icon={HiOutlineUserGroup}
+          title={q ? "Không tìm thấy bệnh nhân phù hợp" : "Chưa có bệnh nhân nào"}
+          description={q ? undefined : "Bệnh nhân sẽ xuất hiện tại đây sau khi có lịch hẹn với bạn."}
+        />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {patients.map((p) => (
-            <button key={p.id} onClick={() => openPatient(p)} className="text-left">
-              <Card className="flex items-center gap-3 hover:border-teal-200 transition h-full">
-                <Avatar name={p.name} color="#3F9683" />
-                <div className="min-w-0">
-                  <p className="font-semibold text-ink truncate">{p.name}</p>
-                  <p className="text-xs text-ink-faint">{p.visits} lượt khám</p>
-                </div>
-              </Card>
-            </button>
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {patients.map((p, i) => (
+            <li key={p.id}>
+                <Button
+                  variant="inverted"
+                  onClick={() => openPatient(p)}
+                  className="h-auto w-full rounded-card border border-border p-4 text-left font-normal shadow-none hover:border-accent/50 [&>span]:w-full [&>span]:justify-start [&>span]:gap-3"
+                >
+                  <Avatar name={p.name} color="#4E635A" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{p.name}</span>
+                    <span className="block text-xs text-muted-foreground">{p.visits} lượt khám{p.phone ? ` · ${p.phone}` : ""}</span>
+                  </span>
+                  <HiOutlineChevronRight aria-hidden className="text-subtle" />
+                </Button>
+              </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
