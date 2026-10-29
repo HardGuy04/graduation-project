@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import Card, { CardHeader } from "../../components/ui/Card";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
+import { HiOutlineClipboardList } from "react-icons/hi";
+import { Card, Tile } from "../../components/app/Surface";
+import { Badge } from "../../components/app/Badge";
+import { Empty, SkeletonList } from "../../components/app/Feedback";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
 import { formatDate, formatDateLong } from "../../utils/formatters";
 
+/** Panel "Lịch sử khám" trong trang Lịch khám. */
 export default function PatientRecords() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -18,55 +21,65 @@ export default function PatientRecords() {
     })();
   }, [user.id]);
 
-  if (loading) return <Spinner label="Đang tải lịch sử khám bệnh…" />;
-  if (records.length === 0) return <EmptyState title="Chưa có hồ sơ bệnh án nào" description="Lịch sử khám bệnh của bạn sẽ hiển thị tại đây sau khi hoàn tất buổi khám." />;
+  if (loading) return <SkeletonList rows={2} />;
+  if (records.length === 0) {
+    return (
+      <Empty
+        icon={HiOutlineClipboardList}
+        title="Chưa có hồ sơ bệnh án nào"
+        description="Lịch sử khám bệnh của bạn sẽ hiển thị tại đây sau khi hoàn tất buổi khám."
+      />
+    );
+  }
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {records.map((r) => (
-        <Card key={r.id}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">{formatDateLong(r.createdAt)}</p>
-              <h4 className="mt-1 text-lg font-bold text-ink">{r.diagnosis || <span className="italic text-ink-faint font-normal">Chưa xác định</span>}</h4>
-              <p className="text-sm text-ink-faint mt-0.5">Bác sĩ: {r.doctorName} · {r.doctorSpecialty}</p>
-            </div>
-            {r.followUpDate && (
-              <div className="rounded-lg bg-gold-50 px-3 py-1.5 text-xs font-semibold text-gold-600">
-                Tái khám: {formatDate(r.followUpDate)}
+    <ol className="space-y-4">
+        {records.map((r, i) => (
+          <li key={r.id}>
+            <Card as="article">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    <time dateTime={r.createdAt}>{formatDateLong(r.createdAt)}</time>
+                  </p>
+                  <h3 className="mt-1 text-title">
+                    {r.diagnosis || <span className="font-normal italic text-muted-foreground">Chưa xác định</span>}
+                  </h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">Bác sĩ {r.doctorName} · {r.doctorSpecialty}</p>
+                </div>
+                {r.followUpDate && <Badge tone="solid">Tái khám {formatDate(r.followUpDate)}</Badge>}
               </div>
-            )}
-          </div>
 
-          <div className="mt-4 grid sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-semibold text-ink-soft mb-1">Triệu chứng</p>
-              <p className="text-ink-faint">{r.symptoms}</p>
-            </div>
-            <div>
-              <p className="font-semibold text-ink-soft mb-1">Ghi chú điều trị</p>
-              <p className="text-ink-faint">{r.notes || "—"}</p>
-            </div>
-          </div>
+              <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="font-semibold">Triệu chứng</dt>
+                  <dd className="mt-1 text-muted-foreground">{r.symptoms || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold">Ghi chú điều trị</dt>
+                  <dd className="mt-1 text-muted-foreground">{r.notes || "—"}</dd>
+                </div>
+              </dl>
 
-          {r.prescription && (
-            <div className="mt-4 rounded-xl bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-ink mb-2">Đơn thuốc</p>
-              <ul className="divide-y divide-slate-200">
-                {r.prescription.details.map((d, i) => (
-                  <li key={i} className="flex items-center justify-between py-2 text-sm">
-                    <div>
-                      <p className="font-medium text-ink">{d.medicineName}</p>
-                      <p className="text-xs text-ink-faint">{d.dosage} · {d.instruction}</p>
-                    </div>
-                    <span className="text-xs text-ink-faint shrink-0">SL: {d.quantity}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Card>
-      ))}
-    </div>
+              {r.prescription && (
+                <Tile className="mt-5">
+                  <p className="mb-2 text-sm font-semibold">Đơn thuốc</p>
+                  <ul className="divide-y divide-input/60">
+                    {r.prescription.details.map((d, i) => (
+                      <li key={i} className="flex items-center justify-between gap-4 py-2.5 text-sm">
+                        <div className="min-w-0">
+                          <p className="font-medium">{d.medicineName}</p>
+                          <p className="text-xs text-muted-foreground">{d.dosage} · {d.instruction}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-card px-2.5 py-1 text-xs font-semibold tabular-nums">SL {d.quantity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Tile>
+              )}
+            </Card>
+          </li>
+        ))}
+    </ol>
   );
 }

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineCalendar, HiOutlineClipboardCheck, HiOutlineClock, HiOutlineArrowRight } from "react-icons/hi";
-import Card, { CardHeader } from "../../components/ui/Card";
-import StatCard from "../../components/common/StatCard";
-import { AppointmentStatusBadge } from "../../components/ui/StatusBadge";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
+import { HiOutlineCalendar, HiOutlineClipboardCheck, HiOutlineClock, HiOutlineArrowRight, HiOutlineChevronRight } from "react-icons/hi";
+import { Button } from "@/components/kit/button";
+import { Card, CardHeader, TimeChip } from "../../components/app/Surface";
+import { AppointmentBadge } from "../../components/app/Badge";
+import { StatTile } from "../../components/app/StatTile";
+import { Empty, Loading } from "../../components/app/Feedback";
 import { useAuth } from "../../context/AuthContext";
 import { doctorService } from "../../services/doctorService";
+import { formatDateLong } from "../../utils/formatters";
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
@@ -27,45 +29,81 @@ export default function DoctorDashboard() {
     })();
   }, [user.id]);
 
-  if (loading) return <Spinner label="Đang tải lịch làm việc…" />;
+  if (loading) return <Loading label="Đang tải lịch làm việc…" />;
 
   const pending = all.filter((a) => a.status === "pending").length;
   const completed = all.filter((a) => a.status === "completed").length;
+  const next = today.find((a) => ["confirmed", "in_progress", "pending"].includes(a.status));
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8">
+      <section className="relative grid gap-8 overflow-hidden rounded-card bg-banner p-6 text-foreground sm:p-10 lg:grid-cols-[1fr_340px] lg:items-center">
+        <div aria-hidden className="pointer-events-none absolute -bottom-40 right-24 h-80 w-80 rounded-full border border-accent/15" />
+        <div className="relative">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">{formatDateLong(new Date().toISOString())}</p>
+          <h1 className="text-display-md sm:text-display-lg">Chào bác sĩ {user.fullName?.split(" ").slice(-1)[0]}.</h1>
+          <p className="mt-3 max-w-lg text-[15px] text-muted-foreground">
+            Hôm nay bạn có {today.length} lịch hẹn{pending ? `, ${pending} lịch đang chờ xác nhận` : ""}.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Button asChild size="lg"><Link to="/doctor/appointments">Mở lịch hẹn</Link></Button>
+            <Button asChild variant="frost" size="lg"><Link to="/doctor/schedule">Lịch làm việc</Link></Button>
+          </div>
+        </div>
+        {next && (
+            <div className="relative rounded-card bg-card p-5 shadow-[0_16px_40px_-20px_rgba(78,99,90,0.35)]">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Bệnh nhân tiếp theo</p>
+                <AppointmentBadge status={next.status} />
+              </div>
+              <div className="flex items-center gap-3.5">
+                <TimeChip time={next.startTime} />
+                <p className="min-w-0 truncate font-semibold">{next.patientName}</p>
+              </div>
+              <p className="mt-4 rounded-field bg-tile px-3.5 py-3 text-sm text-muted-foreground">Lý do: {next.reason || "Chưa ghi lý do"}</p>
+              <Button asChild variant="accent" className="mt-4 w-full">
+                <Link to={`/doctor/appointments/${next.id}`}>Mở hồ sơ <HiOutlineArrowRight /></Link>
+              </Button>
+            </div>
+        )}
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard icon={HiOutlineCalendar} tone="teal" label="Lịch hẹn hôm nay" value={today.length} />
-        <StatCard icon={HiOutlineClock} tone="gold" label="Đang chờ xác nhận" value={pending} />
-        <StatCard icon={HiOutlineClipboardCheck} tone="leaf" label="Đã hoàn thành khám" value={completed} />
+        <StatTile className="h-full" icon={HiOutlineCalendar} label="Lịch hẹn hôm nay" value={today.length} />
+          <StatTile className="h-full" icon={HiOutlineClock} label="Đang chờ xác nhận" value={pending} />
+          <StatTile className="h-full" icon={HiOutlineClipboardCheck} label="Đã hoàn thành khám" value={completed} />
       </div>
 
-      <Card padded={false}>
-        <div className="flex items-center justify-between px-6 pt-6 mb-1">
-          <h3 className="text-lg font-bold text-ink font-display">Lịch hẹn hôm nay</h3>
-          <Link to="/doctor/appointments" className="flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-700">
-            Xem tất cả <HiOutlineArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+      <Card>
+        <CardHeader
+          title="Lịch hẹn hôm nay"
+          action={
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/doctor/appointments">Xem tất cả <HiOutlineArrowRight /></Link>
+            </Button>
+          }
+        />
         {today.length === 0 ? (
-          <div className="p-6"><EmptyState title="Hôm nay bạn chưa có lịch hẹn nào" /></div>
+          <Empty icon={HiOutlineCalendar} title="Hôm nay bạn chưa có lịch hẹn nào" />
         ) : (
-          <div className="divide-y divide-slate-100 px-2 pb-2 mt-3">
+          <ul className="-mx-2 divide-y divide-border">
             {today.map((a) => (
-              <Link to={`/doctor/appointments/${a.id}`} key={a.id} className="flex items-center justify-between gap-4 px-4 py-3.5 hover:bg-slate-50 rounded-lg transition">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl2 bg-teal-50 text-teal-700">
-                    <span className="text-sm font-bold leading-none">{a.startTime}</span>
+              <li key={a.id}>
+                <Link
+                  to={`/doctor/appointments/${a.id}`}
+                  className="flex items-center gap-4 rounded-tile px-2 py-3 transition-colors hover:bg-tile"
+                >
+                  <TimeChip time={a.startTime} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{a.patientName}</p>
+                    <p className="truncate text-sm text-muted-foreground">{a.reason || "—"}</p>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink truncate">{a.patientName}</p>
-                    <p className="text-xs text-ink-faint truncate">{a.reason}</p>
-                  </div>
-                </div>
-                <AppointmentStatusBadge status={a.status} />
-              </Link>
+                  <AppointmentBadge status={a.status} />
+                  <HiOutlineChevronRight aria-hidden className="h-5 w-5 shrink-0 text-subtle" />
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </Card>
     </div>

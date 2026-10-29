@@ -1,17 +1,22 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import Card, { CardHeader } from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import AvatarUpload from "../../components/common/AvatarUpload";
-import { FormRow, Input, Select } from "../../components/ui/Field";
+import { Button } from "@/components/kit/button";
+import { Card, CardHeader } from "../../components/app/Surface";
+import { FormRow, Input } from "../../components/app/Field";
+import { ComboboxFieldRHF } from "../../components/app/ComboboxField";
+import { GENDER_OPTIONS } from "../../utils/constants";
+import { DateFieldRHF } from "../../components/app/DateField";
+import { toISODate } from "@/lib/date";
+import { PageHeader } from "../../components/app/PageHeader";
+import AvatarField from "../../components/app/AvatarField";
 import { useAuth } from "../../context/AuthContext";
 import { profileService } from "../../services/profileService";
 import { authService } from "../../services/authService";
 
 export default function PatientProfile() {
   const { user, updateLocalUser } = useAuth();
-  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({ defaultValues: user });
+  const { register, control, handleSubmit, reset, formState: { isSubmitting } } = useForm({ defaultValues: user });
   const {
     register: registerPwd, handleSubmit: handleSubmitPwd, reset: resetPwd,
     formState: { errors: pwdErrors, isSubmitting: changingPwd },
@@ -42,29 +47,27 @@ export default function PatientProfile() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6 animate-fade-in">
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader eyebrow="Tài khoản" title="Hồ sơ cá nhân" description={user.email} />
+
       <Card>
-        <AvatarUpload name={user.fullName} src={user.avatarUrl} color="#3F9683" onChange={handleAvatarChange} />
+        <AvatarField name={user.fullName} src={user.avatarUrl} onChange={handleAvatarChange} />
       </Card>
 
       <Card>
-        <CardHeader title="Thông tin cá nhân" subtitle="Cập nhật thông tin liên hệ và nhân khẩu học" />
+        <CardHeader title="Thông tin cá nhân" description="Cập nhật thông tin liên hệ và nhân khẩu học" />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-3">
-            <FormRow label="Họ và tên"><Input {...register("fullName")} /></FormRow>
-            <FormRow label="Số điện thoại"><Input {...register("phone")} /></FormRow>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormRow label="Họ và tên"><Input autoComplete="name" {...register("fullName")} /></FormRow>
+            <FormRow label="Số điện thoại"><Input type="tel" autoComplete="tel" {...register("phone")} /></FormRow>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <FormRow label="Ngày sinh"><Input type="date" {...register("dateOfBirth")} /></FormRow>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormRow label="Ngày sinh"><DateFieldRHF control={control} name="dateOfBirth" max={toISODate(new Date())} placeholder="Chọn ngày sinh" /></FormRow>
             <FormRow label="Giới tính">
-              <Select {...register("gender")}>
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
-                <option value="other">Khác</option>
-              </Select>
+              <ComboboxFieldRHF control={control} name="gender" options={GENDER_OPTIONS} placeholder="Chọn giới tính" />
             </FormRow>
           </div>
-          <FormRow label="Địa chỉ"><Input {...register("address")} /></FormRow>
+          <FormRow label="Địa chỉ"><Input autoComplete="street-address" {...register("address")} /></FormRow>
           <div className="flex justify-end pt-2">
             <Button type="submit" loading={isSubmitting}>Lưu thay đổi</Button>
           </div>
@@ -72,16 +75,16 @@ export default function PatientProfile() {
       </Card>
 
       <Card>
-        <CardHeader title="Đổi mật khẩu" subtitle="Nên sử dụng mật khẩu mạnh, không trùng với tài khoản khác" />
+        <CardHeader title="Đổi mật khẩu" description="Nên sử dụng mật khẩu mạnh, không trùng với tài khoản khác" />
         <form onSubmit={handleSubmitPwd(onChangePassword)} className="space-y-4">
           <FormRow label="Mật khẩu hiện tại" required error={pwdErrors.oldPassword?.message}>
-            <Input type="password" {...registerPwd("oldPassword", { required: "Bắt buộc" })} />
+            <Input type="password" autoComplete="current-password" {...registerPwd("oldPassword", { required: "Bắt buộc" })} />
           </FormRow>
           <FormRow label="Mật khẩu mới" required error={pwdErrors.newPassword?.message}>
-            <Input type="password" {...registerPwd("newPassword", { required: "Bắt buộc", minLength: { value: 6, message: "Tối thiểu 6 ký tự" } })} />
+            <Input type="password" autoComplete="new-password" {...registerPwd("newPassword", { required: "Bắt buộc", minLength: { value: 6, message: "Tối thiểu 6 ký tự" } })} />
           </FormRow>
           <div className="flex justify-end pt-2">
-            <Button type="submit" variant="secondary" loading={changingPwd}>Đổi mật khẩu</Button>
+            <Button type="submit" variant="outline" loading={changingPwd}>Đổi mật khẩu</Button>
           </div>
         </form>
       </Card>

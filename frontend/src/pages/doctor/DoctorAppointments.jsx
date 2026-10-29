@@ -1,19 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { HiOutlineArrowRight } from "react-icons/hi";
-import Card from "../../components/ui/Card";
-import Tabs from "../../components/ui/Tabs";
-import { AppointmentStatusBadge } from "../../components/ui/StatusBadge";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
-import { Input } from "../../components/ui/Field";
+import { HiOutlineChevronRight, HiOutlineCalendar, HiOutlineX, HiOutlinePhone } from "react-icons/hi";
+import { Button } from "@/components/kit/button";
+import { VercelTabs } from "@/components/kit/vercel-tabs";
+import { TimeChip } from "../../components/app/Surface";
+import { AppointmentBadge } from "../../components/app/Badge";
+import { Empty, SkeletonList } from "../../components/app/Feedback";
+import { DateField } from "../../components/app/DateField";
+import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import { doctorService } from "../../services/doctorService";
-import { formatDate } from "../../utils/formatters";
+import { formatDateLong } from "../../utils/formatters";
 
 const TABS = [
-  { value: "", label: "Tất cả" },
+  { value: "all", label: "Tất cả" },
   { value: "pending", label: "Chờ xác nhận" },
   { value: "confirmed", label: "Đã xác nhận" },
+  { value: "in_progress", label: "Đang khám" },
   { value: "completed", label: "Hoàn thành" },
 ];
 
@@ -21,8 +24,9 @@ export default function DoctorAppointments() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
-  const [status, setStatus] = useState("");
+  const [tab, setTab] = useState("all");
   const [date, setDate] = useState("");
+  const status = tab === "all" ? "" : tab;
 
   useEffect(() => {
     (async () => {
@@ -33,39 +37,69 @@ export default function DoctorAppointments() {
     })();
   }, [user.id, status, date]);
 
+  const groups = useMemo(() => {
+    const map = new Map();
+    list.forEach((a) => {
+      if (!map.has(a.date)) map.set(a.date, []);
+      map.get(a.date).push(a);
+    });
+    return [...map.entries()];
+  }, [list]);
+
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <Tabs tabs={TABS} active={status} onChange={setStatus} />
-        <Input type="date" className="max-w-[170px]" value={date} onChange={(e) => setDate(e.target.value)} />
+    <div>
+      <PageHeader eyebrow="Lịch hẹn" title="Lịch hẹn của tôi" description="Theo dõi và mở hồ sơ khám cho từng lịch hẹn." />
+
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="-mx-1 overflow-x-auto scrollbar-none px-1 pb-2">
+          <VercelTabs ariaLabel="Lọc theo trạng thái" tabs={TABS} value={tab} onValueChange={setTab} />
+        </div>
+        <div className="flex items-center gap-2">
+          <DateField id="appt-date" aria-label="Lọc theo ngày" className="w-[240px]" value={date} onChange={setDate} placeholder="Lọc theo ngày" />
+          {date && (
+            <Button variant="tile" size="icon" aria-label="Bỏ lọc ngày" onClick={() => setDate("")}>
+              <HiOutlineX />
+            </Button>
+          )}
+        </div>
       </div>
 
       {loading ? (
-        <Spinner label="Đang tải lịch hẹn…" />
+        <SkeletonList rows={4} />
       ) : list.length === 0 ? (
-        <EmptyState title="Không có lịch hẹn nào" />
+        <Empty icon={HiOutlineCalendar} title="Không có lịch hẹn nào" description={date ? "Thử chọn ngày khác hoặc bỏ lọc ngày." : undefined} />
       ) : (
-        <div className="grid gap-3">
-          {list.map((a) => (
-            <Link to={`/doctor/appointments/${a.id}`} key={a.id}>
-              <Card className="flex items-center justify-between gap-4 hover:border-teal-200 transition">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl2 bg-teal-50 text-teal-700">
-                    <span className="text-sm font-bold leading-none">{a.startTime}</span>
-                    <span className="text-[10px] mt-0.5 text-teal-500">{formatDate(a.date, { day: "2-digit", month: "2-digit" })}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink truncate">{a.patientName}</p>
-                    <p className="text-sm text-ink-faint truncate">{a.reason}</p>
-                    <p className="text-xs text-ink-faint mt-0.5">SĐT: {a.patientPhone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <AppointmentStatusBadge status={a.status} />
-                  <HiOutlineArrowRight className="h-4 w-4 text-slate-300" />
-                </div>
-              </Card>
-            </Link>
+        <div className="space-y-8">
+          {groups.map(([day, items]) => (
+            <section key={day} aria-labelledby={`day-${day}`}>
+              <h2 id={`day-${day}`} className="mb-3 text-sm font-semibold capitalize text-muted-foreground">
+                {formatDateLong(day)} <span className="font-normal">· {items.length} lịch</span>
+              </h2>
+              <ul className="overflow-hidden rounded-card border border-border bg-card">
+                {items.map((a) => (
+                  <li key={a.id} className="border-b border-border last:border-b-0">
+                      <Link
+                        to={`/doctor/appointments/${a.id}`}
+                        className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-tile sm:px-5"
+                      >
+                        <TimeChip time={a.startTime} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold">{a.patientName}</p>
+                          <p className="truncate text-sm text-muted-foreground">{a.reason || "Chưa ghi lý do khám"}</p>
+                          {a.patientPhone && (
+                            <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <HiOutlinePhone aria-hidden className="h-3.5 w-3.5" /> {a.patientPhone}
+                            </p>
+                          )}
+                          <div className="mt-2 sm:hidden"><AppointmentBadge status={a.status} /></div>
+                        </div>
+                        <AppointmentBadge status={a.status} className="hidden sm:inline-flex" />
+                        <HiOutlineChevronRight aria-hidden className="h-5 w-5 shrink-0 text-subtle" />
+                      </Link>
+                    </li>
+                ))}
+              </ul>
+            </section>
           ))}
         </div>
       )}

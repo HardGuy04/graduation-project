@@ -2,20 +2,20 @@ import {
   HiOutlineViewGrid, HiOutlineUserGroup, HiOutlineCalendar, HiOutlineClipboardList,
   HiOutlineCreditCard, HiOutlineChartBar, HiOutlineOfficeBuilding, HiOutlineCurrencyDollar, HiOutlineUser,
 } from "react-icons/hi";
-import DashboardShell from "./DashboardShell";
+import AppShell from "./AppShell";
 
 const navItems = [
-  { to: "/admin", end: true, label: "Tổng quan", icon: HiOutlineViewGrid },
-  { to: "/admin/appointments", label: "Lịch hẹn", icon: HiOutlineCalendar },
-  { to: "/admin/doctors", label: "Bác sĩ", icon: HiOutlineUserGroup },
-  { to: "/admin/patients", label: "Bệnh nhân", icon: HiOutlineClipboardList },
-  { to: "/admin/invoices", label: "Hóa đơn", icon: HiOutlineCreditCard },
-  { to: "/admin/salary", label: "Lương bác sĩ", icon: HiOutlineCurrencyDollar },
-  { to: "/admin/statistics", label: "Thống kê", icon: HiOutlineChartBar },
-  { to: "/admin/rooms", label: "Phòng khám", icon: HiOutlineOfficeBuilding },
-  { to: "/admin/profile", label: "Hồ sơ cá nhân", icon: HiOutlineUser },
+  { value: "overview", href: "/admin", end: true, label: "Tổng quan", icon: HiOutlineViewGrid },
+  { value: "appointments", href: "/admin/appointments", label: "Lịch hẹn", icon: HiOutlineCalendar },
+  { value: "doctors", href: "/admin/doctors", label: "Bác sĩ", icon: HiOutlineUserGroup },
+  { value: "patients", href: "/admin/patients", label: "Bệnh nhân", icon: HiOutlineClipboardList },
+  { value: "invoices", href: "/admin/invoices", label: "Hóa đơn", icon: HiOutlineCreditCard },
+  { value: "salary", href: "/admin/salary", label: "Lương", icon: HiOutlineCurrencyDollar },
+  { value: "statistics", href: "/admin/statistics", label: "Thống kê", icon: HiOutlineChartBar },
+  { value: "rooms", href: "/admin/rooms", label: "Phòng khám", icon: HiOutlineOfficeBuilding },
+  { value: "profile", href: "/admin/profile", label: "Hồ sơ cá nhân", icon: HiOutlineUser, tab: false },
 ];
 
 export default function AdminLayout() {
-  return <DashboardShell navItems={navItems} roleLabel="Không gian Quản trị viên" />;
+  return <AppShell navItems={navItems} roleLabel="Quản trị viên" profileHref="/admin/profile" routeHeader navBreakpoint="xl" />;
 }

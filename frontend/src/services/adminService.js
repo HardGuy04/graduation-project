@@ -274,7 +274,22 @@ export const adminService = {
     const res = unwrap(await http.get("/admin/rooms", { params: { limit: 100 } }));
     return {
       success: true,
-      data: res.data.map((r) => ({ ...r, status: String(r.status || "").toLowerCase() === "available" ? "available" : String(r.status || "").toLowerCase() })),
+      data: res.data.map((r) => ({
+        id: r.id,
+        name: r.name,
+        status: String(r.status || "AVAILABLE").toLowerCase(),
+      })),
+    };
+  },
+  async updateRoomStatus(id, statusApi) {
+    const res = unwrap(await http.patch(`/admin/rooms/${id}`, { status: statusApi }));
+    return {
+      success: true,
+      data: {
+        id: res.data.id,
+        name: res.data.name,
+        status: String(res.data.status || "AVAILABLE").toLowerCase(),
+      },
     };
   },
   async getAvailableRooms(date, startTime) {

@@ -8,7 +8,7 @@ const SIZES = {
   xl: "h-24 w-24 text-2xl",
 };
 
-export default function Avatar({ name, color = "#0F5C56", size = "md", src, className }) {
+export default function Avatar({ name, color = "#4E635A", size = "md", src, className }) {
   if (src) {
     return (
       <img

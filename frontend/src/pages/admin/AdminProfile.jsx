@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Card, { CardHeader } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
-import AvatarUpload from "../../components/common/AvatarUpload";
+import AvatarField from "../../components/app/AvatarField";
 import { FormRow, Input } from "../../components/ui/Field";
 import { useAuth } from "../../context/AuthContext";
 import { profileService } from "../../services/profileService";
@@ -42,9 +42,9 @@ export default function AdminProfile() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6 animate-fade-in">
+    <div className="max-w-3xl space-y-6">
       <Card>
-        <AvatarUpload name={user.fullName} src={user.avatarUrl} color="#0F5C56" onChange={handleAvatarChange} />
+        <AvatarField name={user.fullName} src={user.avatarUrl} onChange={handleAvatarChange} />
       </Card>
 
       <Card>

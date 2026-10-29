@@ -1,14 +1,14 @@
 import { HiOutlineViewGrid, HiOutlineCalendar, HiOutlineUserGroup, HiOutlineClock, HiOutlineUser } from "react-icons/hi";
-import DashboardShell from "./DashboardShell";
+import AppShell from "./AppShell";
 
 const navItems = [
-  { to: "/doctor", end: true, label: "Tổng quan", icon: HiOutlineViewGrid },
-  { to: "/doctor/appointments", label: "Lịch hẹn của tôi", icon: HiOutlineCalendar },
-  { to: "/doctor/patients", label: "Tra cứu bệnh nhân", icon: HiOutlineUserGroup },
-  { to: "/doctor/schedule", label: "Lịch làm việc", icon: HiOutlineClock },
-  { to: "/doctor/profile", label: "Hồ sơ cá nhân", icon: HiOutlineUser },
+  { value: "overview", href: "/doctor", end: true, label: "Tổng quan", icon: HiOutlineViewGrid },
+  { value: "appointments", href: "/doctor/appointments", label: "Lịch hẹn", icon: HiOutlineCalendar },
+  { value: "patients", href: "/doctor/patients", label: "Bệnh nhân", icon: HiOutlineUserGroup },
+  { value: "schedule", href: "/doctor/schedule", label: "Lịch làm việc", icon: HiOutlineClock },
+  { value: "profile", href: "/doctor/profile", label: "Hồ sơ", icon: HiOutlineUser },
 ];
 
 export default function DoctorLayout() {
-  return <DashboardShell navItems={navItems} roleLabel="Không gian Bác sĩ" />;
+  return <AppShell navItems={navItems} roleLabel="Bác sĩ" profileHref="/doctor/profile" />;
 }

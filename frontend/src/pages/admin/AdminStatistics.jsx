@@ -4,6 +4,7 @@ import TrendAreaChart from "../../components/charts/TrendAreaChart";
 import SimpleBarChart from "../../components/charts/SimpleBarChart";
 import DonutChart from "../../components/charts/DonutChart";
 import { Spinner } from "../../components/ui/Feedback";
+import { CHART_SECONDARY } from "../../components/charts/theme";
 import { adminService } from "../../services/adminService";
 import { commonService } from "../../services/commonService";
 import { formatCurrency } from "../../utils/formatters";
@@ -34,15 +35,15 @@ export default function AdminStatistics() {
   if (loading) return <Spinner label="Đang tổng hợp số liệu thống kê…" />;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Số lượt khám theo ngày" subtitle="Tổng số lịch hẹn ghi nhận" />
-          <TrendAreaChart data={appointmentsTrend} dataKey="total" color="#0F5C56" />
+          <TrendAreaChart data={appointmentsTrend} dataKey="total" />
         </Card>
         <Card>
           <CardHeader title="Doanh thu theo ngày" subtitle="Tổng tiền đã thanh toán" />
-          <TrendAreaChart data={revenueTrend} dataKey="revenue" color="#D9A441" valueFormatter={formatCurrency} />
+          <TrendAreaChart data={revenueTrend} dataKey="revenue" color={CHART_SECONDARY} valueFormatter={formatCurrency} />
         </Card>
       </div>
 

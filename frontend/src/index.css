@@ -3,6 +3,31 @@
 @tailwind utilities;
 
 @layer base {
+  /* Auralis — kênh RGB để Tailwind dùng được /opacity */
+  :root {
+    /* Bảng màu: #CFEBDF · #4E635A · #9AB0A7 · #DCE4FF · #A5ADC8 */
+    --background: 239 246 243;   /* #EFF6F3 nền trang, nhạt từ #CFEBDF */
+    --card: 255 255 255;
+    --foreground: 31 43 38;      /* #1F2B26 chữ chính, đậm từ #4E635A */
+    --primary: 78 99 90;         /* #4E635A — 6.4:1 với chữ trắng */
+    --primary-foreground: 255 255 255;
+    --secondary: 86 104 96;      /* #566860 chữ phụ — 5.4:1 trên nền */
+    --tertiary: 56 72 65;        /* #384841 hover của primary, tiêu đề banner */
+    --neutral: 154 176 167;      /* #9AB0A7 chỉ dùng cho icon/viền */
+    --tile: 228 243 236;         /* #E4F3EC */
+    --tile-strong: 207 235 223;  /* #CFEBDF */
+    --border: 214 228 221;       /* #D6E4DD */
+    --input: 154 176 167;        /* #9AB0A7 */
+    --banner: 207 235 223;       /* #CFEBDF */
+    --accent: 78 99 90;          /* #4E635A */
+    --accent-soft: 220 240 231;  /* #DCF0E7 */
+    --sky: 220 228 255;          /* #DCE4FF */
+    --lavender: 165 173 200;     /* #A5ADC8 */
+    --lavender-ink: 64 72 110;   /* #40486E chữ trên #DCE4FF — 7.6:1 */
+    --danger: 198 40 40;
+    --danger-soft: 253 236 236;
+  }
+
   html {
     @apply scroll-smooth;
   }
@@ -19,6 +44,22 @@
     outline: 2px solid #0F5C56;
     outline-offset: 2px;
   }
+
+  /* Khu vực Bệnh nhân / Bác sĩ */
+  .auralis {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv11", "ss01";
+  }
+  .auralis :is(h1, h2, h3, h4) {
+    @apply font-sans text-foreground;
+  }
+  .auralis ::selection {
+    @apply bg-foreground text-primary-foreground;
+  }
+  .auralis :focus-visible {
+    outline: 2px solid rgb(var(--primary));
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -29,9 +70,18 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-slate-200 rounded-full;
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

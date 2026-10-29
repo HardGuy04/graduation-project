@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { HiOutlinePlusCircle, HiOutlineBan } from "react-icons/hi";
-import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import Tabs from "../../components/ui/Tabs";
-import { AppointmentStatusBadge } from "../../components/ui/StatusBadge";
-import { EmptyState, Spinner } from "../../components/ui/Feedback";
-import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { HiOutlineBan, HiOutlineCalendar, HiOutlineLocationMarker } from "react-icons/hi";
+import { Button } from "@/components/kit/button";
+import { Card, TimeChip } from "../../components/app/Surface";
+import { AppointmentBadge } from "../../components/app/Badge";
+import { Empty, SkeletonList } from "../../components/app/Feedback";
+import { ConfirmDialog } from "../../components/app/Dialog";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
-import { formatDateLong } from "../../utils/formatters";
+import { formatDate, formatDateLong } from "../../utils/formatters";
 
-const TABS = [
+const FILTERS = [
   { value: "", label: "Tất cả" },
   { value: "pending", label: "Chờ xác nhận" },
   { value: "confirmed", label: "Đã xác nhận" },
@@ -20,12 +19,14 @@ const TABS = [
   { value: "cancelled", label: "Đã hủy" },
 ];
 
+/** Panel "Lịch hẹn" trong trang Lịch khám. */
 export default function PatientAppointments() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [status, setStatus] = useState("");
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -37,6 +38,7 @@ export default function PatientAppointments() {
   useEffect(() => { load(); }, [status]); // eslint-disable-line
 
   async function handleCancel() {
+    setCancelling(true);
     try {
       await patientService.cancelAppointment(cancelTarget.id);
       toast.success("Đã hủy lịch hẹn");
@@ -44,47 +46,74 @@ export default function PatientAppointments() {
       load();
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setCancelling(false);
     }
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <Tabs tabs={TABS} active={status} onChange={setStatus} />
-        <Link to="/patient/book"><Button size="sm"><HiOutlinePlusCircle className="h-4 w-4" /> Đặt lịch mới</Button></Link>
+    <div className="space-y-5">
+      <div className="-mx-1 flex gap-2 overflow-x-auto scrollbar-none px-1 pb-1" role="group" aria-label="Lọc theo trạng thái">
+        {FILTERS.map((f) => (
+          <Button
+            key={f.value}
+            size="sm"
+            variant={status === f.value ? "default" : "outline"}
+            aria-pressed={status === f.value}
+            onClick={() => setStatus(f.value)}
+          >
+            {f.label}
+          </Button>
+        ))}
       </div>
 
       {loading ? (
-        <Spinner label="Đang tải lịch hẹn của bạn…" />
+        <SkeletonList rows={3} />
       ) : list.length === 0 ? (
-        <EmptyState title="Chưa có lịch hẹn nào" description="Đặt lịch khám để bắt đầu theo dõi sức khỏe của bạn." />
+        <Empty
+          icon={HiOutlineCalendar}
+          title="Chưa có lịch hẹn nào"
+          description="Đặt lịch khám để bắt đầu theo dõi sức khỏe của bạn."
+          action={<Button asChild><Link to="/patient/book">Đặt lịch khám</Link></Button>}
+        />
       ) : (
-        <div className="grid gap-3">
-          {list.map((a) => (
-            <Card key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="font-bold text-ink">{a.doctorName}</p>
-                <p className="text-sm text-ink-faint">{a.doctorSpecialty}</p>
-                <p className="text-sm text-ink-soft mt-1.5">{formatDateLong(a.date)} lúc {a.startTime}{a.roomName ? ` · ${a.roomName}` : ""}</p>
-                {a.reason && <p className="text-xs text-ink-faint mt-1">Lý do: {a.reason}</p>}
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <AppointmentStatusBadge status={a.status} />
-                {["pending", "confirmed"].includes(a.status) && (
-                  <Button size="sm" variant="secondary" onClick={() => setCancelTarget(a)}>
-                    <HiOutlineBan className="h-4 w-4" /> Hủy lịch
-                  </Button>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
+        <ul className="grid gap-3">
+            {list.map((a, i) => (
+              <li key={a.id}>
+                <Card className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <TimeChip time={a.startTime} date={formatDate(a.date, { day: "2-digit", month: "2-digit" })} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold">{a.doctorName}</p>
+                      <AppointmentBadge status={a.status} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{a.doctorSpecialty}</p>
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                      <span>{formatDateLong(a.date)} · {a.startTime}</span>
+                      {a.roomName && (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <HiOutlineLocationMarker aria-hidden className="h-4 w-4" /> {a.roomName}
+                        </span>
+                      )}
+                    </p>
+                    {a.reason && <p className="mt-1 text-sm text-muted-foreground">Lý do: {a.reason}</p>}
+                  </div>
+                  {["pending", "confirmed"].includes(a.status) && (
+                    <Button variant="outline" size="sm" className="shrink-0 text-destructive hover:border-destructive" onClick={() => setCancelTarget(a)}>
+                      <HiOutlineBan /> Hủy lịch
+                    </Button>
+                  )}
+                </Card>
+              </li>
+            ))}
+        </ul>
       )}
 
       <ConfirmDialog
         open={!!cancelTarget}
         onClose={() => setCancelTarget(null)}
         onConfirm={handleCancel}
+        loading={cancelling}
         danger
         title="Hủy lịch hẹn"
         description={`Bạn có chắc chắn muốn hủy lịch khám với ${cancelTarget?.doctorName} vào ${cancelTarget ? formatDateLong(cancelTarget.date) : ""}?`}
