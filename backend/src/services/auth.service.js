@@ -4,6 +4,8 @@ import env from '../config/env.js';
 import AppError from '../utils/AppError.js';
 import * as v from '../utils/validate.js';
 import { ROLES, USER_STATUS, GENDERS } from '../utils/constants.js';
+import { removeLocalAvatar } from './avatar.service.js';
+import { hasColumn, doctorBioSelect } from '../utils/schema.js';
 import {
   signAccessToken, accessTokenTtlSeconds, generateRefreshToken, hashToken, newFamilyId,
 } from '../utils/jwt.js';
@@ -75,11 +77,12 @@ async function recordLoginFailure(ip, login) {
 // ── Hồ sơ người dùng trả cho client (không bao giờ có password_hash) ─────────
 
 export async function getUserProfile(userId, conn = pool) {
+  const bio = await doctorBioSelect();
   const [rows] = await conn.query(
     `SELECT u.id, u.username, u.email, u.phone, u.full_name, u.avatar_url, u.role, u.status,
             u.created_at, u.updated_at,
             p.id AS patient_id, p.date_of_birth, p.gender, p.address,
-            d.id AS doctor_id, d.specialty_id, s.name AS specialty_name, d.experience, d.degree,
+            d.id AS doctor_id, d.specialty_id, s.name AS specialty_name, d.experience, d.degree, ${bio} AS bio,
             a.id AS admin_id, a.position
        FROM users u
        LEFT JOIN patient p       ON p.user_id = u.id
@@ -111,7 +114,7 @@ export function serializeUser(r) {
   if (r.role === ROLES.DOCTOR && r.doctor_id) {
     user.doctor = {
       id: r.doctor_id, specialtyId: r.specialty_id, specialtyName: r.specialty_name,
-      experience: r.experience, degree: r.degree,
+      experience: r.experience, degree: r.degree, bio: r.bio ?? null,
     };
   }
   if (r.role === ROLES.ADMIN && r.admin_id) {
@@ -350,8 +353,18 @@ export async function updateMe(user, b) {
   if (user.role === ROLES.ADMIN && v.has(b, 'position')) {
     profileSet.position = v.str(b.position, 'position', { max: 100 });
   }
+  if (user.role === ROLES.DOCTOR && v.has(b, 'bio')) {
+    if (!(await hasColumn('doctor', 'bio'))) {
+      throw new AppError(503, 'SCHEMA_NOT_READY', 'Chưa chạy migration 005_doctor_bio.sql nên chưa lưu được phần giới thiệu');
+    }
+    profileSet.bio = v.str(b.bio, 'bio', { max: 1000 }) || null;
+  }
 
+  let oldAvatar = null;
   await withTransaction(async (conn) => {
+    if ('avatar_url' in userSet) {
+      [[{ avatar_url: oldAvatar }]] = await conn.query('SELECT avatar_url FROM users WHERE id = ? FOR UPDATE', [user.id]);
+    }
     if (Object.keys(userSet).length) {
       await conn.query('UPDATE users SET ? WHERE id = ?', [userSet, user.id]);
     }
@@ -360,9 +373,12 @@ export async function updateMe(user, b) {
         await conn.query('UPDATE patient SET ? WHERE id = ?', [profileSet, user.patientId]);
       } else if (user.role === ROLES.ADMIN && user.adminId) {
         await conn.query('UPDATE admin_profile SET ? WHERE id = ?', [profileSet, user.adminId]);
+      } else if (user.role === ROLES.DOCTOR && user.doctorId) {
+        await conn.query('UPDATE doctor SET ? WHERE id = ?', [profileSet, user.doctorId]);
       }
     }
   });
+  if (oldAvatar && oldAvatar !== userSet.avatar_url) await removeLocalAvatar(oldAvatar);
   return getUserProfile(user.id);
 }
 

@@ -10,9 +10,12 @@ import { useAuth } from "../../context/AuthContext";
 import { profileService } from "../../services/profileService";
 import { authService } from "../../services/authService";
 
+const BIO_MAX = 1000;
+
 export default function DoctorProfile() {
   const { user, updateLocalUser } = useAuth();
-  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({ defaultValues: user });
+  const { register, handleSubmit, reset, watch, formState: { isSubmitting, dirtyFields, errors } } = useForm({ defaultValues: user });
+  const bioLength = (watch("bio") || "").length;
   const {
     register: registerPwd, handleSubmit: handleSubmitPwd, reset: resetPwd,
     formState: { errors: pwdErrors, isSubmitting: changingPwd },
@@ -21,15 +24,22 @@ export default function DoctorProfile() {
   useEffect(() => { reset(user); }, [user]); // eslint-disable-line
 
   async function onSubmit(values) {
-    const res = await profileService.updateProfile(user.id, values);
-    updateLocalUser(res.data);
-    toast.success("Cập nhật hồ sơ thành công");
+    try {
+      // Chỉ gửi phần giới thiệu khi có sửa: chưa chạy migration 005 thì họ tên/SĐT vẫn lưu được
+      const res = await profileService.updateProfile(user.id, { ...values, bio: dirtyFields.bio ? values.bio : undefined });
+      updateLocalUser(res.data);
+      toast.success("Cập nhật hồ sơ thành công");
+    } catch (err) {
+      toast.error(err.message || "Không lưu được hồ sơ");
+    }
   }
 
-  async function handleAvatarChange(avatarUrl) {
-    const res = await profileService.updateProfile(user.id, { avatarUrl });
+  async function handleAvatarChange(file) {
+    const res = file
+      ? await profileService.uploadAvatar(file)
+      : await profileService.updateProfile(user.id, { avatarUrl: null });
     updateLocalUser(res.data);
-    toast.success(avatarUrl ? "Đã cập nhật ảnh đại diện" : "Đã xóa ảnh đại diện");
+    toast.success(file ? "Đã cập nhật ảnh đại diện" : "Đã xóa ảnh đại diện");
   }
 
   async function onChangePassword(values) {
@@ -65,8 +75,16 @@ export default function DoctorProfile() {
             <FormRow label="Họ và tên"><Input autoComplete="name" {...register("fullName")} /></FormRow>
             <FormRow label="Số điện thoại"><Input type="tel" autoComplete="tel" {...register("phone")} /></FormRow>
           </div>
-          <FormRow label="Giới thiệu bản thân" hint="Hiển thị cho bệnh nhân khi chọn bác sĩ đặt lịch">
-            <Textarea rows={4} {...register("description")} />
+          <FormRow
+            label="Giới thiệu bản thân"
+            hint={`Hiển thị cho bệnh nhân khi chọn bác sĩ đặt lịch · ${bioLength}/${BIO_MAX}`}
+            error={errors.bio?.message}
+          >
+            <Textarea
+              rows={4}
+              placeholder="Kinh nghiệm, thế mạnh chuyên môn, nơi từng công tác…"
+              {...register("bio", { maxLength: { value: BIO_MAX, message: `Tối đa ${BIO_MAX} ký tự` } })}
+            />
           </FormRow>
           <div className="flex justify-end pt-2">
             <Button type="submit" loading={isSubmitting}>Lưu thay đổi</Button>

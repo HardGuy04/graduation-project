@@ -15,7 +15,8 @@ import { EmptyState, Spinner } from "../../components/ui/Feedback";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { adminService } from "../../services/adminService";
 import { commonService } from "../../services/commonService";
-import { formatDate } from "../../utils/formatters";
+import { formatDate, formatDateTime } from "../../utils/formatters";
+import { cn } from "@/lib/utils";
 
 const STATUS_TABS = [
   { value: "", label: "Tất cả" },
@@ -24,30 +25,100 @@ const STATUS_TABS = [
   { value: "completed", label: "Hoàn thành" },
   { value: "cancelled", label: "Đã hủy" },
   { value: "rejected", label: "Từ chối" },
+  { value: "no_show", label: "Không đến" },
 ];
+
+const SORT_OPTIONS = [
+  { value: "createdAt:desc", label: "Đăng ký mới nhất" },
+  { value: "createdAt:asc", label: "Đăng ký cũ nhất" },
+  { value: "startAt:asc", label: "Giờ khám sớm nhất" },
+  { value: "startAt:desc", label: "Giờ khám muộn nhất" },
+];
+
+const HOUR = 3_600_000;
+
+function useNow(intervalMs = 60_000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
+function clock(ms, now) {
+  const d = new Date(ms);
+  const time = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return new Date(now).toDateString() === d.toDateString() ? time : `${time} ${d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}`;
+}
+
+function remaining(ms) {
+  const min = Math.max(1, Math.round(ms / 60_000));
+  if (min < 60) return `còn ${min} phút`;
+  if (min < 48 * 60) return `còn ${Math.round(min / 60)} giờ`;
+  return `còn ${Math.round(min / 1440)} ngày`;
+}
+
+/** Hạn xử lý: lịch chờ phải duyệt trước giờ khám; quá giờ khám + N phút hệ thống tự hủy / tự ghi không đến. */
+function Deadline({ appt, now }) {
+  const start = new Date(appt.startAt).getTime();
+  const auto = appt.autoCloseAt ? new Date(appt.autoCloseAt).getTime() : null;
+  if (!["pending", "confirmed"].includes(appt.status) || Number.isNaN(start)) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const pending = appt.status === "pending";
+  if (now < start) {
+    const urgent = pending && start - now <= 2 * HOUR;
+    return (
+      <div className="text-xs leading-5">
+        <p className={cn("font-semibold", urgent ? "text-destructive" : pending ? "text-foreground" : "text-muted-foreground")}>
+          {pending ? `Duyệt trước ${clock(start, now)}` : `Check-in từ ${clock(start, now)}`}
+        </p>
+        <p className="text-muted-foreground">{remaining(start - now)}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="text-xs leading-5">
+      <p className="font-semibold text-destructive">{pending ? "Quá giờ, chưa duyệt" : "Quá giờ, chưa check-in"}</p>
+      {auto && (
+        <p className="text-muted-foreground">
+          {now < auto ? `${pending ? "Tự hủy" : "Tự ghi không đến"} lúc ${clock(auto, now)}` : "Đang chờ hệ thống tự đóng"}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function AdminAppointments() {
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState(SORT_OPTIONS[0].value);
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null); // {type, appt}
+  const now = useNow();
 
   async function load() {
     setLoading(true);
-    const res = await adminService.getAppointments({ status: status || undefined, q: q || undefined });
+    const [sortBy, order] = sort.split(":");
+    const res = await adminService.getAppointments({ status: status || undefined, q: q || undefined, sortBy, sort: order });
     setList(res.data);
     setLoading(false);
   }
 
-  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [status, q]); // eslint-disable-line
+  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [status, q, sort]); // eslint-disable-line
 
   async function runAction() {
     const { type, appt } = confirmAction;
     const fn = { confirm: adminService.confirmAppointment, reject: adminService.rejectAppointment, cancel: adminService.cancelAppointment }[type];
-    await fn(appt.id);
-    toast.success("Cập nhật lịch hẹn thành công");
+    try {
+      await fn(appt.id);
+      toast.success("Cập nhật lịch hẹn thành công");
+    } catch (err) {
+      toast.error(err.message || "Không cập nhật được lịch hẹn");
+    }
     setConfirmAction(null);
     load();
   }
@@ -56,8 +127,16 @@ export default function AdminAppointments() {
     <div className="space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <Tabs tabs={STATUS_TABS} active={status} onChange={setStatus} />
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <SearchInput className="w-full max-w-xs flex-1" label="Tìm lịch hẹn" placeholder="Tìm theo tên/SĐT bệnh nhân…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <ComboboxField
+            className="w-[220px]"
+            aria-label="Sắp xếp lịch hẹn"
+            options={SORT_OPTIONS}
+            value={sort}
+            onChange={(v) => v && setSort(v)}
+            placeholder="Sắp xếp"
+          />
           <Button onClick={() => setModalOpen(true)}><HiOutlinePlus /> Tạo lịch hẹn</Button>
         </div>
       </div>
@@ -70,7 +149,7 @@ export default function AdminAppointments() {
         <TableShell>
           <thead>
             <tr>
-              <Th>Bệnh nhân</Th><Th>Bác sĩ</Th><Th>Ngày khám</Th><Th>Giờ</Th><Th>Phòng khám</Th><Th>Lý do khám</Th><Th>Trạng thái</Th><Th className="text-right">Thao tác</Th>
+              <Th>Bệnh nhân</Th><Th>Bác sĩ</Th><Th>Ngày khám</Th><Th>Giờ</Th><Th>Phòng khám</Th><Th>Lý do khám</Th><Th>Đăng ký lúc</Th><Th>Trạng thái</Th><Th>Hạn xử lý</Th><Th className="text-right">Thao tác</Th>
             </tr>
           </thead>
           <tbody>
@@ -88,14 +167,18 @@ export default function AdminAppointments() {
                   )}
                 </Td>
                 <Td className="max-w-[220px] truncate" title={a.reason}>{a.reason}</Td>
+                <Td className="whitespace-nowrap text-xs text-muted-foreground">{formatDateTime(a.createdAt)}</Td>
                 <Td><AppointmentStatusBadge status={a.status} /></Td>
+                <Td className="min-w-[150px]"><Deadline appt={a} now={now} /></Td>
                 <Td>
                   <div className="flex items-center justify-end gap-1.5">
                     {a.status === "pending" && (
                       <>
-                        <Button variant="ghost" size="icon" className="text-accent hover:bg-accent-soft" onClick={() => setConfirmAction({ type: "confirm", appt: a })} title="Xác nhận" aria-label={`Xác nhận lịch của ${a.patientName}`}>
-                          <HiOutlineCheck />
-                        </Button>
+                        {now < new Date(a.startAt).getTime() && (
+                          <Button variant="ghost" size="icon" className="text-accent hover:bg-accent-soft" onClick={() => setConfirmAction({ type: "confirm", appt: a })} title="Xác nhận" aria-label={`Xác nhận lịch của ${a.patientName}`}>
+                            <HiOutlineCheck />
+                          </Button>
+                        )}
                         <Button variant="ghost-danger" size="icon" onClick={() => setConfirmAction({ type: "reject", appt: a })} title="Từ chối" aria-label={`Từ chối lịch của ${a.patientName}`}>
                           <HiOutlineX />
                         </Button>
