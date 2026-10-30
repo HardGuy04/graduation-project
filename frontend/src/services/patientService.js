@@ -93,8 +93,18 @@ export const patientService = {
     return { success: true, data: { balance: Number(res.data.balance) } };
   },
 
-  async loadBalance(_patientId, amount) {
-    const res = unwrap(await http.post("/patient/wallet/topup", { amount }));
+  async loadBalance(_patientId, amount, { bankCode } = {}) {
+    const res = unwrap(await http.post("/patient/wallet/topup", { amount, bankCode: bankCode || undefined }));
+    return { success: true, data: res.data };
+  },
+
+  async payInvoiceVnpay(id, { bankCode } = {}) {
+    const res = unwrap(await http.post(`/patient/invoices/${id}/pay-vnpay`, { bankCode: bankCode || undefined }));
+    return { success: true, data: res.data };
+  },
+
+  async getPaymentConfig() {
+    const res = unwrap(await http.get("/payments/config"));
     return { success: true, data: res.data };
   },
 

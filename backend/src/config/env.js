@@ -39,6 +39,13 @@ const env = Object.freeze({
   // Bật nhắc lịch tự động (đặt REMINDER_ENABLED=false khi chạy test)
   REMINDER_ENABLED: process.env.REMINDER_ENABLED !== 'false',
 
+  // Quá giờ hẹn bấy nhiêu phút mà lịch vẫn PENDING → tự hủy; CONFIRMED chưa check-in → tự đánh dấu NO_SHOW. 0 = tắt.
+  APPT_AUTO_CLOSE_MINUTES: Math.max(0, Number(process.env.APPT_AUTO_CLOSE_MINUTES ?? 30) || 0),
+
+  // Ảnh đại diện lưu trên đĩa (đường dẫn tính từ thư mục backend), phục vụ tại API_PUBLIC_URL/uploads/avatars/...
+  UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+  API_PUBLIC_URL: (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, ''),
+
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   VNPAY_TMN_CODE: process.env.VNPAY_TMN_CODE || '',
   VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET || '',

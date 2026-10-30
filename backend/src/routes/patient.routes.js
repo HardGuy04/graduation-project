@@ -16,6 +16,7 @@ router.get('/medical-records/:id', record.get);
 router.get('/invoices', invoice.list);
 router.get('/invoices/:id', invoice.get);
 router.post('/invoices/:id/pay-wallet', invoice.payWithWallet);
+router.post('/invoices/:id/pay-vnpay', invoice.payWithVnpay);
 router.get('/wallet', invoice.myWallet);
 router.get('/wallet/transactions', invoice.myWalletTransactions);
 router.post('/wallet/topup', invoice.myTopup);

@@ -11,6 +11,7 @@ import { EmptyState, Spinner } from "../../components/ui/Feedback";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { adminService } from "../../services/adminService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { PAYMENT_METHOD_LABEL } from "../../utils/constants";
 
 export default function AdminInvoices() {
   const [loading, setLoading] = useState(true);
@@ -70,7 +71,12 @@ export default function AdminInvoices() {
                 <Td className="font-semibold">{inv.patientName}</Td>
                 <Td>{formatDate(inv.createdAt)}</Td>
                 <Td className="font-semibold">{formatCurrency(inv.amount)}</Td>
-                <Td><InvoiceStatusBadge status={inv.status} /></Td>
+                <Td>
+                  <InvoiceStatusBadge status={inv.status} />
+                  {inv.paymentMethod && (
+                    <p className="mt-1 text-xs text-muted-foreground">{PAYMENT_METHOD_LABEL[inv.paymentMethod] || inv.paymentMethod}</p>
+                  )}
+                </Td>
                 <Td>
                   <div className="flex items-center justify-end gap-1.5">
                     <Button variant="ghost" size="icon" onClick={() => setDetail(inv)} title="Xem chi tiết" aria-label={`Xem hóa đơn #${inv.id}`}>
@@ -105,7 +111,14 @@ export default function AdminInvoices() {
               <span className="text-headline tabular-nums">{formatCurrency(detail.amount)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <InvoiceStatusBadge status={detail.status} />
+              <span className="flex items-center gap-2">
+                <InvoiceStatusBadge status={detail.status} />
+                {detail.paymentMethod && (
+                  <span className="text-sm text-muted-foreground">
+                    qua {PAYMENT_METHOD_LABEL[detail.paymentMethod] || detail.paymentMethod}
+                  </span>
+                )}
+              </span>
               {detail.status === "unpaid" && (
                 <Button size="sm" onClick={() => setConfirmTarget(detail)}>Xác nhận đã thu tiền</Button>
               )}

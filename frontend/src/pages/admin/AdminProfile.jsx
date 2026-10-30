@@ -20,15 +20,21 @@ export default function AdminProfile() {
   useEffect(() => { reset(user); }, [user]); // eslint-disable-line
 
   async function onSubmit(values) {
-    const res = await profileService.updateProfile(user.id, values);
-    updateLocalUser(res.data);
-    toast.success("Cập nhật hồ sơ thành công");
+    try {
+      const res = await profileService.updateProfile(user.id, values);
+      updateLocalUser(res.data);
+      toast.success("Cập nhật hồ sơ thành công");
+    } catch (err) {
+      toast.error(err.message || "Không lưu được hồ sơ");
+    }
   }
 
-  async function handleAvatarChange(avatarUrl) {
-    const res = await profileService.updateProfile(user.id, { avatarUrl });
+  async function handleAvatarChange(file) {
+    const res = file
+      ? await profileService.uploadAvatar(file)
+      : await profileService.updateProfile(user.id, { avatarUrl: null });
     updateLocalUser(res.data);
-    toast.success(avatarUrl ? "Đã cập nhật ảnh đại diện" : "Đã xóa ảnh đại diện");
+    toast.success(file ? "Đã cập nhật ảnh đại diện" : "Đã xóa ảnh đại diện");
   }
 
   async function onChangePassword(values) {

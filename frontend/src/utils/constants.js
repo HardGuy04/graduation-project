@@ -39,6 +39,37 @@ export const INVOICE_STATUS_LABEL = {
   paid: "Đã thanh toán",
 };
 
+export const PAYMENT_METHOD_LABEL = {
+  CASH: "Tiền mặt",
+  CARD: "Thẻ tại quầy",
+  TRANSFER: "Chuyển khoản",
+  WALLET: "Ví MediPay",
+  VNPAY: "VNPay",
+};
+
+export const VNPAY_BANK_OPTIONS = [
+  { value: "", label: "Chọn tại cổng VNPay" },
+  { value: "VNPAYQR", label: "Quét mã VNPAY-QR" },
+  { value: "VNBANK", label: "Thẻ ATM / Tài khoản ngân hàng" },
+  { value: "INTCARD", label: "Thẻ quốc tế (Visa, Master, JCB)" },
+];
+
+/** Mã vnp_ResponseCode theo tài liệu VNPay. */
+export const VNPAY_RESPONSE_MESSAGE = {
+  "07": "Trừ tiền thành công nhưng giao dịch bị nghi ngờ gian lận.",
+  "09": "Thẻ/Tài khoản chưa đăng ký dịch vụ Internet Banking.",
+  10: "Xác thực thông tin thẻ/tài khoản sai quá 3 lần.",
+  11: "Đã hết hạn chờ thanh toán. Vui lòng thực hiện lại giao dịch.",
+  12: "Thẻ/Tài khoản đang bị khóa.",
+  13: "Nhập sai mật khẩu xác thực giao dịch (OTP).",
+  24: "Bạn đã hủy giao dịch.",
+  51: "Tài khoản không đủ số dư để thực hiện giao dịch.",
+  65: "Tài khoản đã vượt quá hạn mức giao dịch trong ngày.",
+  75: "Ngân hàng thanh toán đang bảo trì.",
+  79: "Nhập sai mật khẩu thanh toán quá số lần quy định.",
+  99: "Giao dịch không thành công.",
+};
+
 export const ROOM_STATUS_LABEL = {
   available: "Sẵn sàng",
   maintenance: "Bảo trì",

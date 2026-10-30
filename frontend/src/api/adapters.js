@@ -46,6 +46,7 @@ export function toUiUser(u) {
     specialtyId: u.doctor?.specialtyId ?? u.specialtyId,
     specialtyName: u.doctor?.specialtyName ?? u.specialtyName,
     degree: u.doctor?.degree ?? u.degree,
+    bio: u.doctor?.bio ?? u.bio ?? "",
     experienceYears: u.doctor?.experience ?? u.experienceYears ?? u.experience,
     position: u.admin?.position ?? u.position,
   };

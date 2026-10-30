@@ -1,6 +1,7 @@
 // /api/auth/*
 import { Router } from 'express';
 import authenticate from '../middlewares/auth.middleware.js';
+import { uploadAvatar } from '../middlewares/upload.middleware.js';
 import * as c from '../controllers/auth.controller.js';
 
 const router = Router();
@@ -13,6 +14,7 @@ router.post('/logout', c.logout);
 
 router.get('/me', authenticate, c.getMe);
 router.patch('/me', authenticate, c.updateMe);
+router.post('/me/avatar', authenticate, uploadAvatar, c.uploadAvatar);
 router.post('/change-password', authenticate, c.changePassword);
 
 export default router;

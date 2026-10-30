@@ -1,4 +1,5 @@
 import * as authService from '../services/auth.service.js';
+import { saveAvatar } from '../services/avatar.service.js';
 import { body } from '../utils/validate.js';
 import { ok, created, noContent } from '../utils/response.js';
 import AppError from '../utils/AppError.js';
@@ -28,6 +29,11 @@ export async function getMe(req, res) {
 
 export async function updateMe(req, res) {
   ok(res, await authService.updateMe(req.user, body(req)));
+}
+
+export async function uploadAvatar(req, res) {
+  await saveAvatar(req.user.id, req.file);
+  ok(res, await authService.getUserProfile(req.user.id));
 }
 
 export async function changePassword(req, res) {

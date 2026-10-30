@@ -191,6 +191,9 @@ export default function PatientBookAppointment() {
                             <span className="block text-sm font-normal text-muted-foreground">{d.degree} · {d.experienceYears} năm kinh nghiệm</span>
                           </span>
                         </span>
+                        {d.bio && (
+                          <span className="mt-3 line-clamp-3 text-sm text-muted-foreground" title={d.bio}>{d.bio}</span>
+                        )}
                       </ChoiceCard>
                     ))}
                   </div>

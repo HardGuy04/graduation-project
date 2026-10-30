@@ -146,7 +146,8 @@ export const adminService = {
         date: filters.date,
         q: filters.q,
         limit: 100,
-        sort: "desc",
+        sort: filters.sort || "desc",
+        sortBy: filters.sortBy,
       },
     }));
     return { success: true, data: res.data.map(toUiAppointment) };

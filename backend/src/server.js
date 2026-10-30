@@ -3,10 +3,12 @@ import env from './config/env.js';
 import app from './app.js';
 import pool from './config/db.js';
 import { startReminderJob } from './services/notification.service.js';
+import { startAutoCloseJob } from './services/appointment.service.js';
 
 const server = app.listen(env.PORT, () => {
   console.log(`MediCare Hub API — http://localhost:${env.PORT}`);
   startReminderJob();
+  startAutoCloseJob();
 });
 
 function shutdown() {
