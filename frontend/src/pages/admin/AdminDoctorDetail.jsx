@@ -40,13 +40,13 @@ export default function AdminDoctorDetail() {
   useEffect(() => { load(); }, [id]); // eslint-disable-line
 
   async function handleDeleteSchedule(scheduleId) {
-    await adminService.deleteSchedule(scheduleId);
+    await adminService.deleteSchedule(scheduleId, { doctorId: id });
     toast.success("Đã xóa lịch làm việc");
     load();
   }
 
   async function handleDeleteLeave() {
-    await adminService.deleteLeave(deleteLeaveTarget.id);
+    await adminService.deleteLeave(deleteLeaveTarget.id, { doctorId: id });
     toast.success("Đã hủy đánh dấu ngày nghỉ");
     setDeleteLeaveTarget(null);
     load();

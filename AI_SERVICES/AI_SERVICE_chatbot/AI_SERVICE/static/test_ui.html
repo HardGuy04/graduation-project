@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Test Chatbot AI - Phòng khám</title>
+<style>
+  :root {
+    --primary: #0f766e;
+    --primary-dark: #0b5a54;
+    --bg: #f4f7f6;
+    --bubble-bot: #ffffff;
+    --bubble-user: #0f766e;
+    --border: #e2e8e6;
+    --text: #1f2937;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 720px;
+    height: 100vh;
+    max-height: 860px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  header .title { font-weight: 600; font-size: 16px; }
+  header .subtitle { font-size: 12px; opacity: 0.85; }
+  header .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80; display: inline-block; margin-right: 6px;
+  }
+
+  .toolbar {
+    display: flex; gap: 8px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #fafcfb;
+    font-size: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .toolbar label { color: var(--muted); }
+  .toolbar select, .toolbar input[type=text] {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .toolbar .quick-btn {
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--primary-dark);
+  }
+  .toolbar .quick-btn:hover { background: #eefaf8; }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg);
+  }
+  .msg { max-width: 78%; display: flex; flex-direction: column; }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 14px;
+    line-height: 1.5;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+  .msg.bot .bubble {
+    background: var(--bubble-bot);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+  .msg.user .bubble {
+    background: var(--bubble-user);
+    color: white;
+    border-top-right-radius: 4px;
+  }
+  .meta {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-right: 6px;
+    font-weight: 600;
+  }
+  .badge.rule_based { background: #dbeafe; color: #1d4ed8; }
+  .badge.ml_model { background: #dcfce7; color: #15803d; }
+  .badge.fallback { background: #fee2e2; color: #b91c1c; }
+
+  .typing {
+    display: flex; gap: 4px; padding: 10px 14px;
+  }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted);
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+  .input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: white;
+  }
+  .input-bar input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+  }
+  .input-bar input:focus { border-color: var(--primary); }
+  .input-bar button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .input-bar button:hover { background: var(--primary-dark); }
+  .input-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="avatar">🩺</div>
+      <div>
+        <div class="title">Trợ lý ảo Phòng khám</div>
+        <div class="subtitle"><span class="status-dot"></span>AI_SERVICE - Chế độ test độc lập</div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <label>Endpoint:</label>
+      <select id="endpointSelect">
+        <option value="/api/chatbot/ask">/api/chatbot/ask (giả lập Back-end)</option>
+        <option value="/internal/chatbot">/internal/chatbot (hợp đồng nội bộ AI_SERVICE)</option>
+      </select>
+      <label>role:</label>
+      <select id="roleSelect">
+        <option value="patient">patient</option>
+        <option value="doctor">doctor</option>
+        <option value="admin">admin</option>
+      </select>
+      <button class="quick-btn" onclick="quickAsk('Phòng khám có những chuyên khoa nào?')">Chuyên khoa?</button>
+      <button class="quick-btn" onclick="quickAsk('Lịch làm việc của bác sĩ Lê Văn Cường')">Lịch BS. Cường</button>
+      <button class="quick-btn" onclick="quickAsk('Bị sốt cao nên làm gì?')">Bị sốt phải làm sao?</button>
+      <button class="quick-btn" onclick="quickAsk('Địa chỉ phòng khám ở đâu?')">Địa chỉ phòng khám</button>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg bot">
+        <div class="bubble">Xin chào! Đây là giao diện TEST cho AI_SERVICE (chatbot tư vấn). Bạn hãy thử đặt câu hỏi ở dưới, ví dụ: "Phòng khám có những chuyên khoa nào?" hoặc "Bị đau đầu phải làm sao?".</div>
+      </div>
+    </div>
+
+    <form class="input-bar" id="chatForm">
+      <input type="text" id="messageInput" placeholder="Nhập câu hỏi..." autocomplete="off" />
+      <button type="submit" id="sendBtn">Gửi</button>
+    </form>
+  </div>
+
+<script>
+  const messagesEl = document.getElementById('messages');
+  const form = document.getElementById('chatForm');
+  const input = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const endpointSelect = document.getElementById('endpointSelect');
+  const roleSelect = document.getElementById('roleSelect');
+
+  function addUserMessage(text) {
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.innerHTML = `<div class="bubble"></div>`;
+    div.querySelector('.bubble').textContent = text;
+    messagesEl.appendChild(div);
+    scrollDown();
+  }
+
+  function addBotMessage(text, meta) {
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    div.appendChild(bubble);
+    if (meta) {
+      const metaEl = document.createElement('div');
+      metaEl.className = 'meta';
+      metaEl.innerHTML = meta;
+      div.appendChild(metaEl);
+    }
+    messagesEl.appendChild(div);
+    scrollDown();
+  }
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.id = 'typingIndicator';
+    div.innerHTML = `<div class="bubble typing"><span></span><span></span><span></span></div>`;
+    messagesEl.appendChild(div);
+    scrollDown();
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function scrollDown() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function sendMessage(text) {
+    if (!text.trim()) return;
+    addUserMessage(text);
+    input.value = '';
+    sendBtn.disabled = true;
+    addTyping();
+
+    const endpoint = endpointSelect.value;
+    const role = roleSelect.value;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, role: role, userId: 1 }),
+      });
+      const data = await res.json();
+      removeTyping();
+
+      let reply, meta;
+      if (endpoint === '/api/chatbot/ask') {
+        reply = data.data.reply;
+        meta = `Nguồn dữ liệu: Back-end (mô phỏng) · ${new Date(data.data.createdAt).toLocaleTimeString('vi-VN')}`;
+      } else {
+        reply = data.reply;
+        const badgeClass = data.source || 'ml_model';
+        const badgeText = {rule_based: 'RULE-BASED (DB)', ml_model: 'ML MODEL', fallback: 'FALLBACK'}[badgeClass] || badgeClass;
+        const conf = data.confidence != null ? ` · Độ tin cậy: ${(data.confidence*100).toFixed(1)}%` : '';
+        const intentTxt = data.intent ? ` · Intent: ${data.intent}` : '';
+        meta = `<span class="badge ${badgeClass}">${badgeText}</span>${intentTxt}${conf}`;
+      }
+      addBotMessage(reply, meta);
+    } catch (err) {
+      removeTyping();
+      addBotMessage('Lỗi kết nối tới AI_SERVICE. Hãy chắc chắn server đang chạy (uvicorn main:app --reload --port 8000).');
+      console.error(err);
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  function quickAsk(text) {
+    sendMessage(text);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage(input.value);
+  });
+</script>
+</body>
+</html>

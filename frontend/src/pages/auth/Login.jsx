@@ -8,9 +8,8 @@ import { FormRow, Input } from "../../components/ui/Field";
 import { useAuth } from "../../context/AuthContext";
 
 const DEMO_ACCOUNTS = [
-  { role: "Admin", email: "admin@medicare.vn" },
-  { role: "Bác sĩ", email: "tranthib@medicare.vn" },
-  { role: "Bệnh nhân", email: "nguyenvanan@gmail.com" },
+  { role: "Admin", email: "test-seed-admin@example.com" },
+  { role: "Bác sĩ", email: "test-seed-doctor1@example.com" },
 ];
 
 export default function Login() {
@@ -20,7 +19,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const {
     register, handleSubmit, setValue, formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { email: "", password: "123456" } });
+  } = useForm({ defaultValues: { email: "", password: "Test@12345" } });
 
   async function onSubmit(values) {
     try {
@@ -85,7 +84,7 @@ export default function Login() {
       </p>
 
       <div className="mt-8 rounded-xl2 border border-slate-100 bg-slate-50/70 p-4">
-        <p className="text-xs font-semibold uppercase text-ink-faint tracking-wide mb-2">Tài khoản demo (mật khẩu: 123456)</p>
+        <p className="text-xs font-semibold uppercase text-ink-faint tracking-wide mb-2">Tài khoản thử (mật khẩu: Test@12345)</p>
         <div className="space-y-1.5">
           {DEMO_ACCOUNTS.map((acc) => (
             <button

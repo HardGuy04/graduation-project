@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { HiOutlineCreditCard, HiOutlineCheckCircle, HiOutlineExclamation, HiOutlineShieldCheck, HiOutlinePlus } from "react-icons/hi";
 import clsx from "clsx";
@@ -21,6 +22,7 @@ export default function PatientInvoices() {
   const [balance, setBalance] = useState(null);
   const [payTarget, setPayTarget] = useState(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
 
   async function load() {
     setLoading(true);
@@ -31,6 +33,16 @@ export default function PatientInvoices() {
   }
 
   useEffect(() => { load(); }, [user.id]); // eslint-disable-line
+
+  useEffect(() => {
+    const topup = params.get("topup");
+    if (!topup) return;
+    if (topup === "ok") toast.success("Nạp ví thành công");
+    if (topup === "fail") toast.error("Thanh toán nạp ví không thành công");
+    params.delete("topup");
+    setParams(params, { replace: true });
+    load();
+  }, []); // eslint-disable-line
 
   if (loading) return <Spinner label="Đang tải hóa đơn của bạn…" />;
 
@@ -184,7 +196,7 @@ function PayModal({ invoice, balance, patientId, onClose, onRequestTopUp, onSucc
             <Button className="w-full" onClick={handleTransfer} loading={submitting} disabled={insufficient}>
               Xác nhận chuyển khoản
             </Button>
-            <p className="text-[11px] text-center text-ink-faint">Giao dịch mô phỏng cho mục đích demo, không phát sinh tiền thật.</p>
+            <p className="text-[11px] text-center text-ink-faint">Thanh toán bằng số dư ví MediPay.</p>
           </div>
         )
       )}
@@ -209,9 +221,13 @@ function TopUpModal({ open, patientId, onClose, onSuccess }) {
     setSubmitting(true);
     try {
       const res = await patientService.loadBalance(patientId, numAmount);
+      if (res.data.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+        return;
+      }
       setStep("success");
       toast.success("Nạp tiền vào ví thành công");
-      setTimeout(() => onSuccess(res.data.balance), 900);
+      setTimeout(() => onSuccess(Number(res.data.balance)), 900);
     } catch (err) {
       setError(err.message || "Nạp tiền thất bại, vui lòng thử lại");
     } finally {
@@ -220,7 +236,7 @@ function TopUpModal({ open, patientId, onClose, onSuccess }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nạp tiền vào ví" subtitle="Mô phỏng liên kết tài khoản ngân hàng" width="max-w-sm">
+    <Modal open={open} onClose={onClose} title="Nạp tiền vào ví" subtitle="Có cổng VNPay thì chuyển sang trang thanh toán; chưa cấu hình thì ghi nhận mô phỏng" width="max-w-sm">
       {step === "success" ? (
         <div className="flex flex-col items-center gap-3 py-6 text-center animate-fade-in">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-leaf-50">

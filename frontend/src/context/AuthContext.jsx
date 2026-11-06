@@ -1,37 +1,51 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { authService } from "../services/authService";
-import { TOKEN_KEY, USER_KEY } from "../utils/constants";
+import { TOKEN_KEY, REFRESH_KEY, USER_KEY } from "../utils/constants";
 
 const AuthContext = createContext(null);
+
+function persist(user, tokens) {
+  localStorage.setItem(TOKEN_KEY, tokens.token);
+  if (tokens.refreshToken) localStorage.setItem(REFRESH_KEY, tokens.refreshToken);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    try {
-      const rawUser = localStorage.getItem(USER_KEY);
-      const token = localStorage.getItem(TOKEN_KEY);
-      if (rawUser && token) setUser(JSON.parse(rawUser));
-    } catch {
-      // ignore corrupted storage
-    } finally {
-      setInitializing(false);
-    }
+    (async () => {
+      try {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const rawUser = localStorage.getItem(USER_KEY);
+        if (!token || !rawUser) return;
+        setUser(JSON.parse(rawUser));
+        try {
+          const res = await authService.me();
+          localStorage.setItem(USER_KEY, JSON.stringify(res.data));
+          setUser(res.data);
+        } catch {
+          // token hết hạn: interceptor sẽ refresh; nếu vẫn lỗi thì giữ user local đến khi gọi API thất bại
+        }
+      } catch {
+        // ignore corrupted storage
+      } finally {
+        setInitializing(false);
+      }
+    })();
   }, []);
 
   async function login(email, password) {
     const res = await authService.login(email, password);
-    localStorage.setItem(TOKEN_KEY, res.data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
+    persist(res.data.user, res.data);
     setUser(res.data.user);
     return res.data.user;
   }
 
   async function register(payload) {
     const res = await authService.register(payload);
-    localStorage.setItem(TOKEN_KEY, res.data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
+    persist(res.data.user, res.data);
     setUser(res.data.user);
     return res.data.user;
   }
@@ -45,7 +59,10 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    const refreshToken = localStorage.getItem(REFRESH_KEY);
+    authService.logout(refreshToken);
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);
   }

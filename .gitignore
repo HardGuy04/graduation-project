@@ -1,0 +1,52 @@
+# Environment variables & secrets
+.env
+.env.*
+*.env
+!.env.example
+*.local
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Build outputs
+frontend/dist/
+dist/
+
+# Local databases & uploads
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+scratch/
+
+# IDE & OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

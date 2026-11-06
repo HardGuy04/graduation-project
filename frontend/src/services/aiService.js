@@ -1,15 +1,35 @@
-// Lớp service này là điểm nối duy nhất cần sửa khi tích hợp BE + AI_SERVICE thật.
-// Hiện tại gọi hàm mock để FE chạy độc lập trong lúc chờ AI_SERVICE huấn luyện xong.
-//
-// Khi có Back-end thật (theo đúng luồng đã thống nhất: FE -> BE (:5000) -> AI_SERVICE (:8000)):
-//
-//   predictDiseaseAndMedicine: ({ symptoms, diagnosis }) =>
-//     httpClient.post("/ai/predict-disease", { symptoms, diagnosis }),
-//
-// Không cần sửa bất kỳ file nào trong `pages/` hay `components/` vì
-// DoctorAppointmentDetail.jsx chỉ import và gọi qua `aiService`.
+import http, { unwrap } from "../api/http";
 import { apiAiPredictDisease } from "../mock/mockApi";
 
+// Đặt false để gọi API thật qua Backend (:5000) -> AI_SERVICE (:8000)
+const USE_MOCK_PREDICT = false;
+
 export const aiService = {
-  predictDiseaseAndMedicine: ({ symptoms, diagnosis }) => apiAiPredictDisease({ symptoms, diagnosis }),
+  askChatbot: async (message) => {
+    const res = await http.post("/chatbot/message", { message });
+    return unwrap(res);
+  },
+
+  predictDiseaseAndMedicine: async ({ symptoms, diagnosis }) => {
+    if (USE_MOCK_PREDICT) {
+      return apiAiPredictDisease({ symptoms, diagnosis });
+    }
+    const res = await http.post("/ai/predict-disease", { symptoms, diagnosis });
+    const unwrapped = unwrap(res);
+    return {
+      success: true,
+      data: unwrapped.data,
+      ...unwrapped.data,
+    };
+  },
+
+  getMedicinesByDisease: async (disease) => {
+    if (!disease) return { medicines: [] };
+    const res = await http.get("/ai/medicines-by-disease", {
+      params: { disease },
+    });
+    const unwrapped = unwrap(res);
+    return unwrapped.data;
+  },
 };
+

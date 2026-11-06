@@ -11,6 +11,7 @@ export const APPOINTMENT_STATUS = {
   COMPLETED: "completed",
   CANCELLED: "cancelled",
   REJECTED: "rejected",
+  NO_SHOW: "no_show",
 };
 
 export const APPOINTMENT_STATUS_LABEL = {
@@ -20,6 +21,7 @@ export const APPOINTMENT_STATUS_LABEL = {
   completed: "Hoàn thành",
   cancelled: "Đã hủy",
   rejected: "Đã từ chối",
+  no_show: "Không đến",
 };
 
 export const APPOINTMENT_STATUS_STYLE = {
@@ -29,6 +31,7 @@ export const APPOINTMENT_STATUS_STYLE = {
   completed: "bg-leaf-50 text-leaf-600 border-leaf-400/30",
   cancelled: "bg-slate-100 text-slate-400 border-slate-200",
   rejected: "bg-clay-50 text-clay-500 border-clay-400/30",
+  no_show: "bg-clay-50 text-clay-500 border-clay-400/30",
 };
 
 export const INVOICE_STATUS_LABEL = {
@@ -65,4 +68,5 @@ export const GENDER_LABEL = {
 };
 
 export const TOKEN_KEY = "medicare_hub_token";
+export const REFRESH_KEY = "medicare_hub_refresh";
 export const USER_KEY = "medicare_hub_user";

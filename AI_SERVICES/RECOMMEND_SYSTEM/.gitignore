@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# Environment variables
+.env
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+reports/tmp/
+
+# Type Checking & Linting
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Scratch and transient outputs
+scratch/
