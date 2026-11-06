@@ -326,7 +326,8 @@ function MedicalRecordForm({ doctorId, appointmentId, appointmentReason, onDone 
                     <div className="col-span-9 sm:col-span-2">
                       <Input aria-label={`Cách dùng dòng ${index + 1}`} placeholder="Cách dùng" {...registerRx(`details.${index}.instruction`)} />
                     </div>
-                    <div className="col-span-3 flex justify-end sm:col-span-1">
+                    {/* Ở mobile nút xoá chiếm hết dòng để vùng bấm đủ 44px */}
+                    <div className="col-span-12 flex justify-end sm:col-span-1">
                       <Button
                         variant="ghost-danger"
                         size="icon"

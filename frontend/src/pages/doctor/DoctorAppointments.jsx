@@ -5,7 +5,7 @@ import { Button } from "@/components/kit/button";
 import { VercelTabs } from "@/components/kit/vercel-tabs";
 import { TimeChip } from "../../components/app/Surface";
 import { AppointmentBadge } from "../../components/app/Badge";
-import { Empty, SkeletonList } from "../../components/app/Feedback";
+import { Empty, ErrorState, SkeletonList } from "../../components/app/Feedback";
 import { DateField } from "../../components/app/DateField";
 import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
@@ -23,19 +23,39 @@ const TABS = [
 export default function DoctorAppointments() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [list, setList] = useState([]);
   const [tab, setTab] = useState("all");
   const [date, setDate] = useState("");
   const status = tab === "all" ? "" : tab;
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
+  async function load() {
+    try {
       const res = await doctorService.getMyAppointments(user.id, { status: status || undefined, date: date || undefined });
       setList(res.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được danh sách lịch hẹn.");
+    } finally {
       setLoading(false);
-    })();
-  }, [user.id, status, date]);
+    }
+  }
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id, status, date]); // eslint-disable-line
+
+  // Đổi bộ lọc: bật lại trạng thái tải trước khi gọi API
+  function handleTabChange(next) {
+    setLoading(true);
+    setTab(next);
+  }
+
+  function handleDateChange(next) {
+    setLoading(true);
+    setDate(next);
+  }
 
   const groups = useMemo(() => {
     const map = new Map();
@@ -52,12 +72,12 @@ export default function DoctorAppointments() {
 
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="-mx-1 overflow-x-auto scrollbar-none px-1 pb-2">
-          <VercelTabs ariaLabel="Lọc theo trạng thái" tabs={TABS} value={tab} onValueChange={setTab} />
+          <VercelTabs ariaLabel="Lọc theo trạng thái" tabs={TABS} value={tab} onValueChange={handleTabChange} />
         </div>
         <div className="flex items-center gap-2">
-          <DateField id="appt-date" aria-label="Lọc theo ngày" className="w-[240px]" value={date} onChange={setDate} placeholder="Lọc theo ngày" />
+          <DateField id="appt-date" aria-label="Lọc theo ngày" className="w-[240px]" value={date} onChange={handleDateChange} placeholder="Lọc theo ngày" />
           {date && (
-            <Button variant="tile" size="icon" aria-label="Bỏ lọc ngày" onClick={() => setDate("")}>
+            <Button variant="tile" size="icon" aria-label="Bỏ lọc ngày" onClick={() => handleDateChange("")}>
               <HiOutlineX />
             </Button>
           )}
@@ -66,6 +86,8 @@ export default function DoctorAppointments() {
 
       {loading ? (
         <SkeletonList rows={4} />
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : list.length === 0 ? (
         <Empty icon={HiOutlineCalendar} title="Không có lịch hẹn nào" description={date ? "Thử chọn ngày khác hoặc bỏ lọc ngày." : undefined} />
       ) : (

@@ -30,6 +30,8 @@
 
   html {
     @apply scroll-smooth;
+    /* Header sticky cao 72px — chừa khoảng để nút nhận focus / anchor không bị che (WCAG 2.4.11) */
+    scroll-padding-top: 88px;
   }
   body {
     @apply bg-paper text-ink font-sans antialiased;

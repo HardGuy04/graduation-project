@@ -10,7 +10,7 @@ import { FormRow, Input } from "../../components/app/Field";
 import { ComboboxFieldRHF } from "../../components/app/ComboboxField";
 import { DateFieldRHF } from "../../components/app/DateField";
 import { AppDialog, ConfirmDialog } from "../../components/app/Dialog";
-import { Empty, Loading } from "../../components/app/Feedback";
+import { Empty, ErrorState, Loading } from "../../components/app/Feedback";
 import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import { doctorService } from "../../services/doctorService";
@@ -27,6 +27,7 @@ const EMPTY_SHIFT = { dayOfWeek: 1, startTime: "08:00", endTime: "12:00", slotDu
 export default function DoctorSchedule() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [schedules, setSchedules] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [editing, setEditing] = useState(null); // null | { ...shift } (id undefined = tạo mới)
@@ -35,13 +36,22 @@ export default function DoctorSchedule() {
   const [deleting, setDeleting] = useState(false);
 
   async function load() {
-    const [s, l] = await Promise.all([doctorService.getMySchedule(user.id), doctorService.getMyLeaves(user.id)]);
-    setSchedules(s.data);
-    setLeaves(l.data);
-    setLoading(false);
+    try {
+      const [s, l] = await Promise.all([doctorService.getMySchedule(user.id), doctorService.getMyLeaves(user.id)]);
+      setSchedules(s.data);
+      setLeaves(l.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được lịch làm việc.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { load(); }, [user.id]); // eslint-disable-line
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id]); // eslint-disable-line
 
   async function handleDelete() {
     if (!confirm) return;
@@ -74,6 +84,7 @@ export default function DoctorSchedule() {
   }
 
   if (loading) return <Loading label="Đang tải lịch làm việc…" />;
+  if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); load(); }} />;
 
   const byDay = WEEK.map((d) => ({
     day: d,
@@ -129,7 +140,8 @@ export default function DoctorSchedule() {
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {s.slotDuration} phút/lượt · tối đa {s.maxPatients}
                         </p>
-                        <div className="mt-2 flex items-center gap-1">
+                        {/* flex-wrap để 3 nút không tràn ngang ở 360px */}
+                        <div className="mt-2 flex flex-wrap items-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -142,6 +154,7 @@ export default function DoctorSchedule() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-11 w-11"
                             onClick={() => setEditing({ ...s })}
                             aria-label={`Sửa ca ${s.startTime}–${s.endTime} ${WEEKDAY_LABEL[day]}`}
                           >
@@ -150,6 +163,7 @@ export default function DoctorSchedule() {
                           <Button
                             variant="ghost-danger"
                             size="icon"
+                            className="h-11 w-11"
                             onClick={() => setConfirm({ kind: "shift", item: s })}
                             aria-label={`Xóa ca ${s.startTime}–${s.endTime} ${WEEKDAY_LABEL[day]}`}
                           >

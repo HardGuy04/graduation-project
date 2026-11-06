@@ -5,7 +5,7 @@ import { Button } from "@/components/kit/button";
 import { Card, CardHeader, TimeChip } from "../../components/app/Surface";
 import { AppointmentBadge, Badge } from "../../components/app/Badge";
 import { StatTile } from "../../components/app/StatTile";
-import { Empty, Loading } from "../../components/app/Feedback";
+import { Empty, ErrorState, Loading } from "../../components/app/Feedback";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
@@ -15,19 +15,35 @@ const weekday = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("vi-VN",
 export default function PatientDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [invoices, setInvoices] = useState([]);
 
-  useEffect(() => {
-    (async () => {
+  async function load() {
+    try {
       const [a, i] = await Promise.all([patientService.getMyAppointments(user.id), patientService.getInvoices(user.id)]);
       setAppointments(a.data);
       setInvoices(i.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được thông tin của bạn.");
+    } finally {
       setLoading(false);
-    })();
-  }, [user.id]);
+    }
+  }
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id]); // eslint-disable-line
+
+  function retry() {
+    setLoading(true);
+    load();
+  }
 
   if (loading) return <Loading label="Đang tải thông tin của bạn…" />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
 
   const upcoming = appointments
     .filter((a) => ["pending", "confirmed"].includes(a.status))

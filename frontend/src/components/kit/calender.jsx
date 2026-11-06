@@ -165,11 +165,15 @@ const defaultPresets = [
   },
 ];
 
+// Ô ngày: mobile cao 44px (chuẩn chạm tối thiểu), từ sm trở lên dùng kích thước gọn.
 const sizeClasses = {
-  sm: { cell: "h-7 w-7 text-xs", header: "text-sm", container: "p-2" },
-  md: { cell: "h-9 w-9 text-sm", header: "text-base", container: "p-4" },
+  sm: { cell: "h-11 w-11 text-xs sm:h-7 sm:w-7", header: "text-sm", container: "p-2" },
+  md: { cell: "h-11 w-11 text-sm sm:h-9 sm:w-9", header: "text-base", container: "p-4" },
   lg: { cell: "h-11 w-11 text-base", header: "text-lg", container: "p-5" },
 };
+
+// Vùng bấm tối thiểu 44px cho các nút icon trong lịch.
+const ICON_BTN = "flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-tile disabled:opacity-50 sm:h-8 sm:w-8 sm:p-1.5";
 
 // ============================================================================
 // ANIMATION VARIANTS
@@ -257,7 +261,7 @@ const TimePicker = React.memo(({
             incrementHour();
           }}
           disabled={disabled}
-          className="pointer-events-auto rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+          className={cn("pointer-events-auto rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
           aria-label="Increase hours">
           <ChevronLeft className="h-4 w-4 rotate-90" />
         </button>
@@ -296,7 +300,7 @@ const TimePicker = React.memo(({
             decrementHour();
           }}
           disabled={disabled}
-          className="pointer-events-auto rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+          className={cn("pointer-events-auto rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
           aria-label="Decrease hours">
           <ChevronRight className="h-4 w-4 rotate-90" />
         </button>
@@ -314,7 +318,7 @@ const TimePicker = React.memo(({
             incrementMinute();
           }}
           disabled={disabled}
-          className="pointer-events-auto rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+          className={cn("pointer-events-auto rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
           aria-label="Increase minutes">
           <ChevronLeft className="h-4 w-4 rotate-90" />
         </button>
@@ -342,7 +346,7 @@ const TimePicker = React.memo(({
             decrementMinute();
           }}
           disabled={disabled}
-          className="pointer-events-auto rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+          className={cn("pointer-events-auto rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
           aria-label="Decrease minutes">
           <ChevronRight className="h-4 w-4 rotate-90" />
         </button>
@@ -466,7 +470,7 @@ const YearPicker = React.memo(({
         <button
           type="button"
           onClick={() => setStartYear((s) => s - 12)}
-          className="rounded-lg p-1.5 transition-colors hover:bg-tile"
+          className={cn("rounded-lg transition-colors hover:bg-tile", ICON_BTN)}
           aria-label="Previous 12 years">
           <ChevronsLeft className="h-4 w-4" />
         </button>
@@ -476,7 +480,7 @@ const YearPicker = React.memo(({
         <button
           type="button"
           onClick={() => setStartYear((s) => s + 12)}
-          className="rounded-lg p-1.5 transition-colors hover:bg-tile"
+          className={cn("rounded-lg transition-colors hover:bg-tile", ICON_BTN)}
           aria-label="Next 12 years">
           <ChevronsRight className="h-4 w-4" />
         </button>
@@ -1155,7 +1159,7 @@ const CalendarContent = React.memo(({
               type="button"
               onClick={() => navigate(-1, "year")}
               disabled={disabled}
-              className="rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+              className={cn("rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
               aria-label="Previous year">
               <ChevronsLeft className="h-4 w-4" />
             </button>
@@ -1163,7 +1167,7 @@ const CalendarContent = React.memo(({
               type="button"
               onClick={() => navigate(-1, "month")}
               disabled={disabled}
-              className="rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+              className={cn("rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
               aria-label="Previous month">
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -1203,7 +1207,7 @@ const CalendarContent = React.memo(({
               type="button"
               onClick={() => navigate(1, "month")}
               disabled={disabled}
-              className="rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+              className={cn("rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
               aria-label="Next month">
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -1211,7 +1215,7 @@ const CalendarContent = React.memo(({
               type="button"
               onClick={() => navigate(1, "year")}
               disabled={disabled}
-              className="rounded-lg p-1.5 transition-colors hover:bg-tile disabled:opacity-50"
+              className={cn("rounded-lg transition-colors hover:bg-tile disabled:opacity-50", ICON_BTN)}
               aria-label="Next year">
               <ChevronsRight className="h-4 w-4" />
             </button>
@@ -1327,7 +1331,7 @@ const CalendarContent = React.memo(({
                     type="button"
                     onClick={goToToday}
                     disabled={disabled}
-                    className="flex items-center gap-1 rounded-md px-3 py-1.5 font-semibold text-xs transition-colors hover:bg-tile disabled:opacity-50">
+                    className="flex min-h-11 items-center gap-1 rounded-md px-3 font-semibold text-xs transition-colors hover:bg-tile disabled:opacity-50 sm:min-h-0 sm:py-1.5">
                     <Check className="h-3 w-3" />
                     {localeStrings.today}
                   </button>
@@ -1345,7 +1349,7 @@ const CalendarContent = React.memo(({
                   type="button"
                   onClick={handleClear}
                   disabled={disabled}
-                  className="flex items-center gap-1 rounded-md px-3 py-1.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-tile disabled:opacity-50">
+                  className="flex min-h-11 items-center gap-1 rounded-md px-3 font-medium text-muted-foreground text-xs transition-colors hover:bg-tile disabled:opacity-50 sm:min-h-0 sm:py-1.5">
                   <X className="h-3 w-3" />
                   {localeStrings.clear}
                 </button>

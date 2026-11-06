@@ -12,7 +12,7 @@ import { InvoiceBadge } from "../../components/app/Badge";
 import { FormRow, Input } from "../../components/app/Field";
 import { ComboboxField } from "../../components/app/ComboboxField";
 import { AppDialog } from "../../components/app/Dialog";
-import { Empty, ErrorNote, Loading } from "../../components/app/Feedback";
+import { Empty, ErrorNote, ErrorState, Loading } from "../../components/app/Feedback";
 import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
@@ -44,6 +44,7 @@ function readVnpayReturn(params) {
 export default function PatientInvoices() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [list, setList] = useState([]);
   const [balance, setBalance] = useState(null);
   const [payment, setPayment] = useState({ vnpayEnabled: false, minAmount: 10000 });
@@ -53,14 +54,22 @@ export default function PatientInvoices() {
   const [result, setResult] = useState(() => readVnpayReturn(params));
 
   async function load() {
-    setLoading(true);
-    const [i, w] = await Promise.all([patientService.getInvoices(user.id), patientService.getWalletBalance(user.id)]);
-    setList(i.data);
-    setBalance(w.data.balance);
-    setLoading(false);
+    try {
+      const [i, w] = await Promise.all([patientService.getInvoices(user.id), patientService.getWalletBalance(user.id)]);
+      setList(i.data);
+      setBalance(w.data.balance);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được hóa đơn của bạn.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { load(); }, [user.id]); // eslint-disable-line
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id]); // eslint-disable-line
 
   useEffect(() => {
     patientService.getPaymentConfig().then((r) => setPayment(r.data)).catch(() => {});
@@ -74,6 +83,7 @@ export default function PatientInvoices() {
   }, []); // eslint-disable-line
 
   if (loading) return <Loading label="Đang tải hóa đơn của bạn…" />;
+  if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); load(); }} />;
 
   const unpaid = list.filter((i) => i.status === "unpaid");
 

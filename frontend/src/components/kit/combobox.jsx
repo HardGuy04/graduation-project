@@ -16,12 +16,13 @@ function ComboboxValue({ ...props }) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
 }
 
-function ComboboxTrigger({ className, children, ...props }) {
+function ComboboxTrigger({ className, children, "aria-label": ariaLabel = "Mở danh sách", ...props }) {
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
       render={<Button variant="ghost" size="icon" />}
-      className={cn("h-9 w-9 text-muted-foreground", className)}
+      className={cn("h-11 w-11 text-muted-foreground", className)}
+      aria-label={ariaLabel}
       {...props}
     >
       {children}
@@ -30,12 +31,13 @@ function ComboboxTrigger({ className, children, ...props }) {
   )
 }
 
-function ComboboxClear({ className, ...props }) {
+function ComboboxClear({ className, "aria-label": ariaLabel = "Xoá lựa chọn", ...props }) {
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
       render={<Button variant="ghost" size="icon" />}
-      className={cn("h-9 w-9 text-muted-foreground", className)}
+      className={cn("h-11 w-11 text-muted-foreground", className)}
+      aria-label={ariaLabel}
       {...props}
     >
       <XIcon className="pointer-events-none size-4" />
@@ -43,7 +45,7 @@ function ComboboxClear({ className, ...props }) {
   )
 }
 
-function ComboboxInput({ className, children, disabled = false, showTrigger = true, showClear = false, ...props }) {
+function ComboboxInput({ className, children, disabled = false, showTrigger = true, showClear = false, triggerAriaLabel, clearAriaLabel, ...props }) {
   return (
     <div data-slot="input-group" className={cn("relative flex w-auto items-center", className)}>
       <ComboboxPrimitive.Input
@@ -56,8 +58,8 @@ function ComboboxInput({ className, children, disabled = false, showTrigger = tr
         {...props}
       />
       <div className="absolute inset-y-0 right-1 flex items-center">
-        {showClear && <ComboboxClear disabled={disabled} />}
-        {showTrigger && <ComboboxTrigger disabled={disabled} />}
+        {showClear && <ComboboxClear disabled={disabled} aria-label={clearAriaLabel} />}
+        {showTrigger && <ComboboxTrigger disabled={disabled} aria-label={triggerAriaLabel} />}
       </div>
       {children}
     </div>
@@ -186,7 +188,8 @@ function ComboboxChip({ className, children, showRemove = true, ...props }) {
       {showRemove && (
         <ComboboxPrimitive.ChipRemove
           render={<Button variant="ghost" size="icon" />}
-          className="-mr-1.5 h-6 w-6 min-h-0 opacity-60 hover:opacity-100"
+          className="-mr-1.5 h-11 w-11 min-h-0 opacity-60 hover:opacity-100 sm:h-6 sm:w-6"
+          aria-label="Xoá lựa chọn"
           data-slot="combobox-chip-remove"
         >
           <XIcon className="pointer-events-none size-3" />
