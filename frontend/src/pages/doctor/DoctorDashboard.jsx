@@ -5,7 +5,7 @@ import { Button } from "@/components/kit/button";
 import { Card, CardHeader, TimeChip } from "../../components/app/Surface";
 import { AppointmentBadge } from "../../components/app/Badge";
 import { StatTile } from "../../components/app/StatTile";
-import { Empty, Loading } from "../../components/app/Feedback";
+import { Empty, ErrorState, Loading } from "../../components/app/Feedback";
 import { useAuth } from "../../context/AuthContext";
 import { doctorService } from "../../services/doctorService";
 import { formatDateLong } from "../../utils/formatters";
@@ -13,11 +13,12 @@ import { formatDateLong } from "../../utils/formatters";
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [today, setToday] = useState([]);
   const [all, setAll] = useState([]);
 
-  useEffect(() => {
-    (async () => {
+  async function load() {
+    try {
       const todayStr = new Date().toISOString().slice(0, 10);
       const [t, a] = await Promise.all([
         doctorService.getMyAppointments(user.id, { date: todayStr }),
@@ -25,11 +26,21 @@ export default function DoctorDashboard() {
       ]);
       setToday(t.data);
       setAll(a.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được lịch làm việc.");
+    } finally {
       setLoading(false);
-    })();
-  }, [user.id]);
+    }
+  }
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id]); // eslint-disable-line
 
   if (loading) return <Loading label="Đang tải lịch làm việc…" />;
+  if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); load(); }} />;
 
   const pending = all.filter((a) => a.status === "pending").length;
   const completed = all.filter((a) => a.status === "completed").length;

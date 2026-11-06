@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import Avatar from "../components/ui/Avatar";
 import NotificationBell from "../components/common/NotificationBell";
 import ChatbotWidget from "../components/common/ChatbotWidget";
+import Footer from "../components/common/Footer";
 import { useAuth } from "../context/AuthContext";
 
 /** Mục đang active = mục có href dài nhất khớp với pathname (mục gốc chỉ khớp chính xác). */
@@ -31,7 +32,7 @@ const BREAKPOINT = {
   xl: { grid: "xl:grid-cols-[1fr_auto_1fr]", tabs: "hidden xl:flex", trigger: "xl:hidden" },
 };
 
-export default function AppShell({ navItems, roleLabel, profileHref, routeHeader = false, navBreakpoint = "lg" }) {
+export default function AppShell({ navItems, roleLabel, profileHref, routeHeader = false, navBreakpoint = "lg", footerVariant }) {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const matches = useMatches();
@@ -55,7 +56,8 @@ export default function AppShell({ navItems, roleLabel, profileHref, routeHeader
   const tabs = navItems.filter((n) => n.tab !== false).map((n) => ({ value: n.value, label: n.label, href: n.href }));
 
   return (
-    <div className="auralis relative isolate min-h-screen">
+    // flex column để footer dính đáy khi trang ngắn (mt-auto trong Footer)
+    <div className="auralis relative isolate flex min-h-screen flex-col">
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-40 top-24 h-[520px] w-[520px] rounded-full bg-banner/60 blur-3xl" />
         <div className="absolute -right-32 top-[38%] h-[460px] w-[460px] rounded-full bg-sky/80 blur-3xl" />
@@ -186,12 +188,14 @@ export default function AppShell({ navItems, roleLabel, profileHref, routeHeader
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-8 outline-none sm:px-6 sm:pt-10 lg:px-8">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] flex-1 px-4 pb-10 pt-8 outline-none scroll-mt-20 sm:px-6 sm:pt-10 lg:px-8">
         <Fade key={pathname}>
           {routeHeader && title && !handle?.hero && <PageHeader title={title} description={handle?.subtitle} />}
           <Outlet />
         </Fade>
       </main>
+
+      {footerVariant && <Footer variant={footerVariant} />}
 
       <ChatbotWidget />
     </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { HiOutlineClipboardList } from "react-icons/hi";
 import { Card, Tile } from "../../components/app/Surface";
 import { Badge } from "../../components/app/Badge";
-import { Empty, SkeletonList } from "../../components/app/Feedback";
+import { Empty, ErrorState, SkeletonList } from "../../components/app/Feedback";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
 import { formatDate, formatDateLong } from "../../utils/formatters";
@@ -11,17 +11,33 @@ import { formatDate, formatDateLong } from "../../utils/formatters";
 export default function PatientRecords() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [records, setRecords] = useState([]);
 
-  useEffect(() => {
-    (async () => {
+  async function load() {
+    try {
       const res = await patientService.getMedicalRecords(user.id);
       setRecords(res.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được hồ sơ bệnh án.");
+    } finally {
       setLoading(false);
-    })();
-  }, [user.id]);
+    }
+  }
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id]); // eslint-disable-line
+
+  function retry() {
+    setLoading(true);
+    load();
+  }
 
   if (loading) return <SkeletonList rows={2} />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
   if (records.length === 0) {
     return (
       <Empty

@@ -10,5 +10,5 @@ const navItems = [
 ];
 
 export default function PatientLayout() {
-  return <AppShell navItems={navItems} roleLabel="Bệnh nhân" profileHref="/patient/profile" />;
+  return <AppShell navItems={navItems} roleLabel="Bệnh nhân" profileHref="/patient/profile" footerVariant="patient" />;
 }

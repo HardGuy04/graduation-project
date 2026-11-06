@@ -5,7 +5,7 @@ import Avatar from "../../components/ui/Avatar";
 import { Card, Tile } from "../../components/app/Surface";
 import { Badge } from "../../components/app/Badge";
 import { SearchInput } from "../../components/app/Field";
-import { Empty, Loading, SkeletonList } from "../../components/app/Feedback";
+import { Empty, ErrorState, Loading, SkeletonList } from "../../components/app/Feedback";
 import { PageHeader } from "../../components/app/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import { doctorService } from "../../services/doctorService";
@@ -14,18 +14,29 @@ import { formatDateLong } from "../../utils/formatters";
 export default function DoctorPatients() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
   const [records, setRecords] = useState(null);
+  const [recordsError, setRecordsError] = useState("");
 
-  useEffect(() => {
-    (async () => {
+  async function load() {
+    try {
       const res = await doctorService.getMyAppointments(user.id);
       setAppointments(res.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được danh sách bệnh nhân.");
+    } finally {
       setLoading(false);
-    })();
-  }, [user.id]);
+    }
+  }
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [user.id]); // eslint-disable-line
 
   const patients = useMemo(() => {
     const map = new Map();
@@ -36,14 +47,24 @@ export default function DoctorPatients() {
     return [...map.values()].filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || p.phone?.includes(q));
   }, [appointments, q]);
 
+  async function loadRecords(patientId) {
+    setRecords(null);
+    setRecordsError("");
+    try {
+      const res = await doctorService.getPatientRecords(patientId);
+      setRecords(res.data);
+    } catch (err) {
+      setRecordsError(err.message || "Không tải được hồ sơ bệnh án.");
+    }
+  }
+
   async function openPatient(p) {
     setSelected(p);
-    setRecords(null);
-    const res = await doctorService.getPatientRecords(p.id);
-    setRecords(res.data);
+    await loadRecords(p.id);
   }
 
   if (loading) return <Loading label="Đang tải danh sách bệnh nhân…" />;
+  if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); load(); }} />;
 
   if (selected) {
     return (
@@ -64,7 +85,11 @@ export default function DoctorPatients() {
         <section aria-labelledby="history-title">
           <h2 id="history-title" className="mb-4 text-title">Lịch sử khám bệnh</h2>
           {records === null ? (
-            <SkeletonList rows={2} />
+            recordsError ? (
+              <ErrorState message={recordsError} onRetry={() => loadRecords(selected.id)} />
+            ) : (
+              <SkeletonList rows={2} />
+            )
           ) : records.length === 0 ? (
             <Empty icon={HiOutlineClipboardList} title="Chưa có hồ sơ bệnh án nào" />
           ) : (

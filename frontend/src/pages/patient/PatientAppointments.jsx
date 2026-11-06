@@ -5,7 +5,7 @@ import { HiOutlineBan, HiOutlineCalendar, HiOutlineLocationMarker } from "react-
 import { Button } from "@/components/kit/button";
 import { Card, TimeChip } from "../../components/app/Surface";
 import { AppointmentBadge } from "../../components/app/Badge";
-import { Empty, SkeletonList } from "../../components/app/Feedback";
+import { Empty, ErrorState, SkeletonList } from "../../components/app/Feedback";
 import { ConfirmDialog } from "../../components/app/Dialog";
 import { useAuth } from "../../context/AuthContext";
 import { patientService } from "../../services/patientService";
@@ -23,19 +23,34 @@ const FILTERS = [
 export default function PatientAppointments() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [list, setList] = useState([]);
   const [status, setStatus] = useState("");
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
 
   async function load() {
-    setLoading(true);
-    const res = await patientService.getMyAppointments(user.id, { status: status || undefined });
-    setList(res.data);
-    setLoading(false);
+    try {
+      const res = await patientService.getMyAppointments(user.id, { status: status || undefined });
+      setList(res.data);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Không tải được danh sách lịch hẹn.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { load(); }, [status]); // eslint-disable-line
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- nạp dữ liệu ban đầu, setState diễn ra sau await
+    load();
+  }, [status]); // eslint-disable-line
+
+  // Đổi bộ lọc: bật lại trạng thái tải trước khi gọi API
+  function handleStatusChange(next) {
+    setLoading(true);
+    setStatus(next);
+  }
 
   async function handleCancel() {
     setCancelling(true);
@@ -60,7 +75,7 @@ export default function PatientAppointments() {
             size="sm"
             variant={status === f.value ? "default" : "outline"}
             aria-pressed={status === f.value}
-            onClick={() => setStatus(f.value)}
+            onClick={() => handleStatusChange(f.value)}
           >
             {f.label}
           </Button>
@@ -69,6 +84,8 @@ export default function PatientAppointments() {
 
       {loading ? (
         <SkeletonList rows={3} />
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : list.length === 0 ? (
         <Empty
           icon={HiOutlineCalendar}

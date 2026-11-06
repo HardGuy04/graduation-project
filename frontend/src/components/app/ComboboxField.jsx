@@ -31,6 +31,8 @@ export function ComboboxField({
   "aria-label": ariaLabel,
 }) {
   const selected = options.find((o) => String(o.value) === String(value ?? "")) ?? null;
+  // Nhãn riêng cho nút mũi tên: có gắn tên field để trình đọc màn hình không mơ hồ
+  const scope = ariaLabel || placeholder;
 
   return (
     <Combobox
@@ -49,6 +51,8 @@ export function ComboboxField({
         onBlur={onBlur}
         disabled={disabled}
         showClear={showClear}
+        triggerAriaLabel={`Mở danh sách: ${scope}`}
+        clearAriaLabel={`Xoá lựa chọn: ${scope}`}
         className={className}
       />
       <ComboboxContent>

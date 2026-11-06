@@ -1,6 +1,7 @@
 import { HiOutlineInbox, HiOutlineExclamationCircle } from "react-icons/hi";
 import { Fade } from "@animate-ui/react/primitives/effects/fade";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/kit/button";
 
 export function Loading({ label = "Đang tải…", className }) {
   return (
@@ -43,6 +44,24 @@ export function ErrorNote({ children, className }) {
     <div role="alert" className={cn("flex items-start gap-2 rounded-field border border-destructive/25 bg-destructive-soft px-4 py-3 text-sm font-medium text-destructive", className)}>
       <HiOutlineExclamationCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
       <div>{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Trạng thái lỗi khi tải danh sách thất bại — luôn kèm nút thử lại để
+ * người dùng không bị kẹt ở màn hình trắng khi API lỗi.
+ */
+export function ErrorState({ message = "Không tải được dữ liệu. Vui lòng thử lại.", onRetry, className }) {
+  return (
+    <div role="alert" className={cn("flex flex-col items-center justify-center gap-3 rounded-card border border-dashed border-destructive/30 bg-card px-6 py-14 text-center", className)}>
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive-soft">
+        <HiOutlineExclamationCircle aria-hidden className="h-6 w-6 text-destructive" />
+      </span>
+      <p className="max-w-sm text-sm font-medium text-foreground">{message}</p>
+      {onRetry && (
+        <Button variant="outline" size="sm" onClick={onRetry}>Thử lại</Button>
+      )}
     </div>
   );
 }
