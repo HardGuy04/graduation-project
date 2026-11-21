@@ -1,12 +1,14 @@
 // Tạo dữ liệu THỬ NGHIỆM tối thiểu để kiểm thử API: chỉ INSERT, không xóa/sửa dữ liệu có sẵn,
 // chạy lại nhiều lần vẫn an toàn (bản ghi đã có thì giữ nguyên).
-// Mọi bản ghi đều dễ nhận biết: email test-seed-*@example.com, tên chuyên khoa/phòng bắt đầu bằng "TEST-".
+// Mọi bản ghi đều dễ nhận biết: email thuộc miền "@test.medicare.vn", tên chuyên khoa/phòng
+// có hậu tố "(thử nghiệm)". Tên hiển thị vẫn là tên người Việt Nam cho hợp lý.
 // Dọn bằng: npm run test:cleanup
 // Chạy: npm run seed   (mật khẩu mặc định Test@12345, đổi bằng biến SEED_PASSWORD)
 import bcrypt from 'bcryptjs';
 import pool, { withTransaction } from '../src/config/db.js';
 
 const PASSWORD = process.env.SEED_PASSWORD || 'Test@12345';
+const TEST_DOMAIN = '@test.medicare.vn';
 
 async function getOrInsert(conn, selectSql, selectParams, insertSql, insertParams) {
   const [rows] = await conn.query(selectSql, selectParams);
@@ -29,47 +31,52 @@ try {
   const out = await withTransaction(async (conn) => {
     const spec = await getOrInsert(
       conn,
-      'SELECT id FROM specialty WHERE name = ?', ['TEST-Nội tổng quát'],
-      'INSERT INTO specialty (name, description) VALUES (?, ?)', ['TEST-Nội tổng quát', 'Chuyên khoa dùng cho kiểm thử'],
+      'SELECT id FROM specialty WHERE name = ?', ['Nội tổng quát (thử nghiệm)'],
+      'INSERT INTO specialty (name, description) VALUES (?, ?)', ['Nội tổng quát (thử nghiệm)', 'Chuyên khoa dùng cho kiểm thử'],
     );
     const room = await getOrInsert(
       conn,
-      'SELECT id FROM room WHERE name = ?', ['TEST-Phòng 101'],
-      'INSERT INTO room (name) VALUES (?)', ['TEST-Phòng 101'],
+      'SELECT id FROM room WHERE name = ?', ['Phòng 101 (thử nghiệm)'],
+      'INSERT INTO room (name) VALUES (?)', ['Phòng 101 (thử nghiệm)'],
     );
     const room2 = await getOrInsert(
       conn,
-      'SELECT id FROM room WHERE name = ?', ['TEST-Phòng 102'],
-      'INSERT INTO room (name) VALUES (?)', ['TEST-Phòng 102'],
+      'SELECT id FROM room WHERE name = ?', ['Phòng 102 (thử nghiệm)'],
+      'INSERT INTO room (name) VALUES (?)', ['Phòng 102 (thử nghiệm)'],
     );
 
+    const adminEmail = `quan.tri.vien${TEST_DOMAIN}`;
     const adminUser = await ensureUser(conn, {
-      email: 'test-seed-admin@example.com', fullName: 'TEST Quản trị viên', role: 'ADMIN', phone: '0900000001',
+      email: adminEmail, fullName: 'Quản trị viên Nguyễn Thu Hà', role: 'ADMIN', phone: '0900000001',
     });
     const admin = await getOrInsert(
       conn,
       'SELECT id FROM admin_profile WHERE user_id = ?', [adminUser.id],
-      'INSERT INTO admin_profile (user_id, position) VALUES (?, ?)', [adminUser.id, 'Lễ tân (test)'],
+      'INSERT INTO admin_profile (user_id, position) VALUES (?, ?)', [adminUser.id, 'Lễ tân'],
     );
 
     const doctors = [];
-    for (const [i, name] of ['TEST Bác sĩ Một', 'TEST Bác sĩ Hai'].entries()) {
+    const doctorSpecs = [
+      { email: `bs.tran.minh.quan${TEST_DOMAIN}`, fullName: 'BS. Trần Minh Quân', phone: '0900000010' },
+      { email: `bs.nguyen.thi.thu.ha${TEST_DOMAIN}`, fullName: 'BS. Nguyễn Thị Thu Hà', phone: '0900000011' },
+    ];
+    for (const d of doctorSpecs) {
       const u = await ensureUser(conn, {
-        email: `test-seed-doctor${i + 1}@example.com`, fullName: name, role: 'DOCTOR', phone: `090000001${i}`,
+        email: d.email, fullName: d.fullName, role: 'DOCTOR', phone: d.phone,
       });
-      const d = await getOrInsert(
+      const doc = await getOrInsert(
         conn,
         'SELECT id FROM doctor WHERE user_id = ?', [u.id],
         'INSERT INTO doctor (user_id, specialty_id, experience, degree) VALUES (?, ?, ?, ?)',
-        [u.id, spec.id, 5, 'Bác sĩ (test)'],
+        [u.id, spec.id, 5, 'Bác sĩ'],
       );
-      doctors.push({ email: `test-seed-doctor${i + 1}@example.com`, userId: u.id, doctorId: d.id });
+      doctors.push({ email: d.email, userId: u.id, doctorId: doc.id });
     }
 
     return {
       specialtyId: spec.id,
       roomIds: [room.id, room2.id],
-      admin: { email: 'test-seed-admin@example.com', userId: adminUser.id, adminId: admin.id },
+      admin: { email: adminEmail, userId: adminUser.id, adminId: admin.id },
       doctors,
     };
   });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useForm, useFieldArray } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -10,6 +10,7 @@ import {
   HiOutlineCheck,
   HiOutlinePlay,
   HiOutlineSparkles,
+  HiOutlineExclamationCircle,
   HiOutlinePhone,
   HiOutlineLocationMarker,
 } from "react-icons/hi";
@@ -181,6 +182,7 @@ function MedicalRecordForm({ doctorId, appointmentId, appointmentReason, onDone 
     handleSubmit: handleSubmitRecord,
     getValues,
     setValue: setRecordValue,
+    watch: watchRecord,
     formState: { errors: recordErrors, isSubmitting: savingRecord },
   } = useForm({
     // Điền sẵn triệu chứng từ "Lý do khám" bệnh nhân đã nhập lúc đặt lịch
@@ -212,12 +214,15 @@ function MedicalRecordForm({ doctorId, appointmentId, appointmentReason, onDone 
     setSelectedDiseases((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   }
 
-  function applyDiagnosis() {
-    setRecordValue("diagnosis", selectedDiseases.join(", "), { shouldValidate: true, shouldDirty: true });
+  function applyDiagnosis(diseasesToApply) {
+    const toApply = Array.isArray(diseasesToApply) ? diseasesToApply : selectedDiseases;
+    if (!toApply || toApply.length === 0) return;
+    setRecordValue("diagnosis", toApply.join(", "), { shouldValidate: true, shouldDirty: true });
+    setSelectedDiseases(toApply);
     toast.success(
-      selectedDiseases.length > 1
-        ? `Đã áp dụng ${selectedDiseases.length} bệnh vào ô chẩn đoán`
-        : "Đã áp dụng vào ô chẩn đoán"
+      toApply.length > 1
+        ? `Đã áp dụng ${toApply.length} bệnh vào ô chẩn đoán`
+        : `Đã áp dụng bệnh "${toApply[0]}" vào ô chẩn đoán`
     );
   }
 
@@ -232,7 +237,22 @@ function MedicalRecordForm({ doctorId, appointmentId, appointmentReason, onDone 
       setAiLoading(true);
       const res = await aiService.predictDiseaseAndMedicine({ symptoms: values.symptoms, diagnosis: values.diagnosis });
       setAiResult(res.data);
-      setSelectedDiseases([]);
+
+      // Tự chọn bệnh khớp với chẩn đoán hiện tại, không có thì chọn bệnh xác suất cao nhất
+      const diseases = res.data?.diseases || [];
+      const currentDiag = (values.diagnosis || "").trim();
+      if (currentDiag && diseases.length > 0) {
+        const matched = diseases.filter(
+          (d) =>
+            normalizeText(currentDiag).includes(normalizeText(d.name)) ||
+            normalizeText(d.name).includes(normalizeText(currentDiag))
+        );
+        setSelectedDiseases(matched.length > 0 ? matched.map((m) => m.name) : [diseases[0].name]);
+      } else if (diseases.length > 0) {
+        setSelectedDiseases([diseases[0].name]);
+      } else {
+        setSelectedDiseases([]);
+      }
     } catch (error) {
       toast.error(error?.message || "Không thể lấy kết quả gợi ý từ AI.");
     } finally {
@@ -409,11 +429,31 @@ function MedicalRecordForm({ doctorId, appointmentId, appointmentReason, onDone 
                     <AiRecommendationResult
                       result={aiResult}
                       selectedDiseases={selectedDiseases}
+                      currentDiagnosis={watchRecord("diagnosis")}
                       onToggleDisease={toggleDisease}
+                      onSelectOnlyDisease={(name) => setSelectedDiseases([name])}
                       onApplyDiagnosis={applyDiagnosis}
                       onUseMedicine={(medicine) => {
-                        append({ medicineName: medicine.name, dosage: "", quantity: 1, instruction: "" });
+                        const medName =
+                          medicine.name +
+                          (medicine.activeIngredient && medicine.activeIngredient !== medicine.name
+                            ? ` (${medicine.activeIngredient})`
+                            : "");
+                        append({
+                          medicineName: medName,
+                          dosage: medicine.dosage || "",
+                          quantity: 1,
+                          instruction: medicine.instruction || "",
+                        });
                         toast.success(`Đã thêm ${medicine.name} vào đơn thuốc mẫu.`);
+                      }}
+                      onApplyLifestyleToNotes={(lifestyleText) => {
+                        const currentNotes = getValues("notes") || "";
+                        const newNotes = currentNotes
+                          ? `${currentNotes}\n\n[Lời khuyên dinh dưỡng & chăm sóc (AI)]\n${lifestyleText}`
+                          : `[Lời khuyên dinh dưỡng & chăm sóc (AI)]\n${lifestyleText}`;
+                        setRecordValue("notes", newNotes, { shouldDirty: true });
+                        toast.success("Đã sao chép lời khuyên vào ô Ghi chú điều trị.");
                       }}
                     />
                   )}
@@ -444,86 +484,487 @@ function ProbabilityBar({ value }) {
   );
 }
 
-/** Hiển thị danh sách gợi ý bệnh và thuốc từ AI. */
-function AiRecommendationResult({ result, selectedDiseases, onToggleDisease, onApplyDiagnosis, onUseMedicine }) {
+/**
+ * Chuẩn hóa chuỗi tiếng Việt để so khớp không phân biệt dấu hay hoa thường.
+ */
+function normalizeText(text) {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .trim();
+}
+
+/**
+ * Kiểm tra xem thuốc có chỉ định điều trị cho bệnh nào hay không.
+ */
+function matchesDisease(med, diseaseName) {
+  if (!med) return false;
+  const target = normalizeText(diseaseName);
+  if (!target) return false;
+
+  // 1. So khớp qua danh sách bệnh được gán cho thuốc (forDiseases)
+  if (Array.isArray(med.forDiseases) && med.forDiseases.length > 0) {
+    const hasMatch = med.forDiseases.some((d) => {
+      const dNorm = normalizeText(d);
+      return dNorm === target || dNorm.includes(target) || target.includes(dNorm);
+    });
+    if (hasMatch) return true;
+  }
+
+  // 2. So khớp qua cột dùng (usage) hoặc ghi chú (note)
+  const usageNorm = normalizeText(med.usage || "");
+  const noteNorm = normalizeText(med.note || "");
+  if (usageNorm.includes(target) || noteNorm.includes(target)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Hiển thị danh sách gợi ý bệnh và thuốc từ AI.
+ * Khi đã chẩn đoán/chọn bệnh, phần gợi ý thuốc sẽ lọc chính xác các thuốc điều trị bệnh đó
+ * (tra cứu phác đồ Hàng 1 / Hàng 2 từ Cơ sở tri thức của AI_SERVICE).
+ */
+function AiRecommendationResult({
+  result,
+  selectedDiseases,
+  currentDiagnosis,
+  onToggleDisease,
+  onSelectOnlyDisease,
+  onApplyDiagnosis,
+  onUseMedicine,
+  onApplyLifestyleToNotes,
+}) {
+  const [activeTab, setActiveTab] = useState("DIAGNOSED"); // "DIAGNOSED" | "ALL"
+  const [protocolMeds, setProtocolMeds] = useState(null);
+  const [loadingProtocol, setLoadingProtocol] = useState(false);
+
+  // Xác định danh sách bệnh đang được chẩn đoán/lựa chọn
+  const activeDiseases = useMemo(() => {
+    if (selectedDiseases && selectedDiseases.length > 0) {
+      return selectedDiseases;
+    }
+    if (currentDiagnosis && currentDiagnosis.trim()) {
+      return currentDiagnosis
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    if (result?.diseases && result.diseases.length > 0) {
+      return [result.diseases[0].name];
+    }
+    return [];
+  }, [selectedDiseases, currentDiagnosis, result]);
+
+  const primaryDisease = activeDiseases[0] || "";
+
+  // Tự động tải phác đồ thuốc chi tiết từ Cơ sở tri thức (KB) cho bệnh đang được chẩn đoán
+  useEffect(() => {
+    let isCancelled = false;
+    if (!primaryDisease) {
+      setProtocolMeds(null);
+      return;
+    }
+
+    async function fetchProtocol() {
+      try {
+        setLoadingProtocol(true);
+        const data = await aiService.getMedicinesByDisease(primaryDisease);
+        if (!isCancelled && data && data.found && Array.isArray(data.medicines)) {
+          setProtocolMeds({ disease: primaryDisease, medicines: data.medicines, details: data.disease });
+        } else if (!isCancelled) {
+          setProtocolMeds(null);
+        }
+      } catch {
+        if (!isCancelled) setProtocolMeds(null);
+      } finally {
+        if (!isCancelled) setLoadingProtocol(false);
+      }
+    }
+
+    fetchProtocol();
+    return () => {
+      isCancelled = true;
+    };
+  }, [primaryDisease]);
+
+  // Danh sách thuốc điều trị riêng cho bệnh đang chẩn đoán
+  const medicinesForDiagnosed = useMemo(() => {
+    // 1. Ưu tiên danh mục phác đồ chuẩn từ Cơ sở tri thức (có phân loại Hàng 1, Hàng 2)
+    if (protocolMeds && protocolMeds.disease === primaryDisease && protocolMeds.medicines?.length > 0) {
+      return protocolMeds.medicines.map((m) => {
+        // Tìm xem mô hình ML có cho điểm xác suất không
+        const mlMatch = (result?.medicines || []).find((x) => normalizeText(x.name) === normalizeText(m.name));
+        return {
+          name: m.name,
+          activeIngredient: m.activeIngredient || "",
+          probability: mlMatch?.probability || (m.line === 1 ? 95 : 82),
+          usage: m.usage || "",
+          dosage: m.dosage || "",
+          instruction: m.instruction || "",
+          forDiseases: [primaryDisease],
+          line: m.line || 1,
+          prescriptionRequired: m.prescriptionRequired !== false,
+          contraindications: m.contraindications || [],
+          warnings: mlMatch?.warnings || [],
+        };
+      });
+    }
+
+    // 2. Dự phòng: lọc từ danh sách thuốc gợi ý tổng hợp của AI
+    if (!result?.medicines) return [];
+    if (activeDiseases.length === 0) return result.medicines;
+    return result.medicines.filter((med) => activeDiseases.some((d) => matchesDisease(med, d)));
+  }, [protocolMeds, primaryDisease, result, activeDiseases]);
+
+  const allMeds = result?.medicines || [];
+  const displayedMedicines =
+    activeTab === "ALL" ? allMeds : medicinesForDiagnosed.length > 0 ? medicinesForDiagnosed : allMeds;
+
+  // Lời khuyên lối sống và dinh dưỡng cho bệnh nhân
+  const lifestyle =
+    result?.lifestyleAdvice ||
+    (protocolMeds?.details && {
+      disease: protocolMeds.details.name,
+      diets: protocolMeds.details.diets || [],
+      precautions: protocolMeds.details.precautions || [],
+      workouts: protocolMeds.details.workouts || [],
+    });
+
+  const hasLifestyle =
+    lifestyle &&
+    ((lifestyle.diets && lifestyle.diets.length > 0) ||
+      (lifestyle.precautions && lifestyle.precautions.length > 0) ||
+      (lifestyle.workouts && lifestyle.workouts.length > 0));
+
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-tile border border-border bg-card p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h4 className="font-semibold">Gợi ý bệnh</h4>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Có thể chọn nhiều bệnh nếu nghi ngờ bệnh nhân mắc đồng thời (bệnh kép)</p>
+    <div className="space-y-4">
+      {/* Cảnh báo dấu hiệu nguy hiểm (Red Flags) nếu có */}
+      {result?.redFlags && result.redFlags.length > 0 && (
+        <div className="rounded-field border border-red-200 bg-red-50 p-3.5 text-red-900">
+          <div className="flex items-center gap-2 text-sm font-bold text-red-800">
+            <HiOutlineExclamationCircle aria-hidden className="h-4 w-4" />
+            <span>CẢNH BÁO DẤU HIỆU NGUY HIỂM (CẤP CỨU)</span>
           </div>
-          <span className="shrink-0 text-xs text-muted-foreground">Xác suất</span>
+          <ul className="mt-1.5 list-inside list-disc space-y-0.5 text-xs text-red-700">
+            {result.redFlags.map((flag, idx) => (
+              <li key={idx}>{flag}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Cột 1: Gợi ý bệnh */}
+        <div className="rounded-tile border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h4 className="font-semibold">Gợi ý bệnh</h4>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Có thể chọn nhiều bệnh nếu nghi ngờ bệnh nhân mắc đồng thời (bệnh kép)
+              </p>
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">Xác suất</span>
+          </div>
+
+          <fieldset className="space-y-2">
+            <legend className="sr-only">Chọn bệnh gợi ý</legend>
+            {(result.diseases || []).map((disease, index) => {
+              const checked = selectedDiseases.includes(disease.name);
+              const isDiagnosed = checked || (activeDiseases.length === 1 && activeDiseases[0] === disease.name);
+              return (
+                <label
+                  key={`${disease.name}-${index}`}
+                  className={cn(
+                    "block cursor-pointer rounded-field border p-3 transition-colors",
+                    isDiagnosed ? "border-primary bg-tile" : "border-transparent hover:bg-tile"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggleDisease(disease.name)}
+                      className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-black"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold">
+                          {index + 1}. {disease.name}
+                          {isDiagnosed && (
+                            <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                              Đang chẩn
+                            </span>
+                          )}
+                        </p>
+                        <span className="shrink-0 text-sm font-bold tabular-nums">{disease.probability}%</span>
+                      </div>
+                      <ProbabilityBar value={disease.probability} />
+                      {disease.description && (
+                        <p className="mt-1.5 text-xs text-muted-foreground">{disease.description}</p>
+                      )}
+                      {disease.specialty && (
+                        <p className="mt-1 text-[11px] font-medium text-muted-foreground">Khoa: {disease.specialty}</p>
+                      )}
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onApplyDiagnosis([disease.name]);
+                          }}
+                          className="text-xs font-semibold text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                        >
+                          Áp dụng bệnh này
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </fieldset>
+
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+            <p className="truncate text-xs text-muted-foreground" aria-live="polite">
+              {selectedDiseases.length > 0
+                ? `Đã chọn: ${selectedDiseases.join(", ")}`
+                : activeDiseases.length > 0
+                ? `Đang xem: ${activeDiseases.join(", ")}`
+                : "Chưa chẩn bệnh nào"}
+            </p>
+            <Button size="sm" disabled={selectedDiseases.length === 0} onClick={() => onApplyDiagnosis()}>
+              Áp dụng vào chẩn đoán
+            </Button>
+          </div>
         </div>
 
-        <fieldset className="space-y-2">
-          <legend className="sr-only">Chọn bệnh gợi ý</legend>
-          {result.diseases.map((disease, index) => {
-            const checked = selectedDiseases.includes(disease.name);
-            return (
-              <label
-                key={`${disease.name}-${index}`}
+        {/* Cột 2: Gợi ý thuốc */}
+        <div className="rounded-tile border border-border bg-card p-4">
+          <div className="mb-3 flex flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold">Gợi ý thuốc điều trị</h4>
+                {loadingProtocol && (
+                  <span className="text-xs font-medium text-muted-foreground animate-pulse">Đang tra cứu phác đồ…</span>
+                )}
+              </div>
+              {activeDiseases.length > 0 ? (
+                <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
+                  Đang lọt kiểm thuốc trị: <span className="font-semibold underline">{activeDiseases.join(", ")}</span>
+                </p>
+              ) : (
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  Chọn một bệnh bên trái để xem danh mục thuốc điều trị chính xác.
+                </p>
+              )}
+            </div>
+
+            {/* Tabs chuyển giữa "Theo bệnh" và "Tất cả gợi ý" */}
+            <div className="flex shrink-0 self-start rounded-field bg-tile p-0.5 text-xs sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab("DIAGNOSED")}
+                aria-pressed={activeTab === "DIAGNOSED"}
                 className={cn(
-                  "block cursor-pointer rounded-field border p-3 transition-colors",
-                  checked ? "border-primary bg-tile" : "border-transparent hover:bg-tile"
+                  "rounded-[8px] px-2.5 py-1 font-medium transition",
+                  activeTab === "DIAGNOSED" ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => onToggleDisease(disease.name)}
-                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-black"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">{index + 1}. {disease.name}</p>
-                      <span className="shrink-0 text-sm font-bold tabular-nums">{disease.probability}%</span>
+                Theo bệnh ({medicinesForDiagnosed.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("ALL")}
+                aria-pressed={activeTab === "ALL"}
+                className={cn(
+                  "rounded-[8px] px-2.5 py-1 font-medium transition",
+                  activeTab === "ALL" ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Tất cả ({allMeds.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Thông báo nếu không có thuốc riêng biệt khi xem theo bệnh */}
+          {activeTab === "DIAGNOSED" && medicinesForDiagnosed.length === 0 && allMeds.length > 0 && (
+            <div className="mb-3 rounded-field border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900">
+              Chưa tìm thấy thuốc phác đồ riêng cho <strong>"{activeDiseases.join(", ")}"</strong>. Đang hiển thị danh mục
+              thuốc chung từ AI.
+            </div>
+          )}
+
+          {/* Danh sách các thuốc */}
+          <ul className="max-h-[500px] space-y-4 overflow-y-auto pr-1">
+            {displayedMedicines.length === 0 ? (
+              <li className="py-8 text-center text-xs text-muted-foreground">Chưa có gợi ý thuốc cho lựa chọn này.</li>
+            ) : (
+              displayedMedicines.map((medicine, index) => (
+                <li key={`${medicine.name}-${index}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="text-sm font-semibold">
+                          {index + 1}. {medicine.name}
+                        </p>
+                        {medicine.line === 1 && (
+                          <span className="rounded border border-sky-200 bg-sky-100 px-1.5 py-0.2 text-[10px] font-semibold text-sky-800">
+                            Phác đồ hàng 1
+                          </span>
+                        )}
+                        {medicine.line === 2 && (
+                          <span className="rounded border border-amber-200 bg-amber-100 px-1.5 py-0.2 text-[10px] font-semibold text-amber-800">
+                            Phác đồ hàng 2
+                          </span>
+                        )}
+                        {medicine.prescriptionRequired === false ? (
+                          <span className="rounded bg-tile px-1.5 py-0.2 text-[10px] font-medium text-muted-foreground">OTC</span>
+                        ) : (
+                          <span className="rounded bg-tile px-1.5 py-0.2 text-[10px] font-medium text-muted-foreground">
+                            Kê đơn (Rx)
+                          </span>
+                        )}
+                      </div>
+                      {medicine.activeIngredient && medicine.activeIngredient !== medicine.name && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          Hoạt chất: <span className="font-medium text-foreground">{medicine.activeIngredient}</span>
+                        </p>
+                      )}
                     </div>
-                    <ProbabilityBar value={disease.probability} />
-                    <p className="mt-1.5 text-xs text-muted-foreground">{disease.description}</p>
+                    {medicine.probability && (
+                      <span className="shrink-0 rounded-full bg-tile px-2 py-0.5 text-xs font-bold tabular-nums">
+                        {medicine.probability}%
+                      </span>
+                    )}
                   </div>
-                </div>
-              </label>
-            );
-          })}
-        </fieldset>
 
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground" aria-live="polite">
-            {selectedDiseases.length > 0 ? `Đã chọn ${selectedDiseases.length} bệnh` : "Chưa chọn bệnh nào"}
-          </p>
-          <Button size="sm" disabled={selectedDiseases.length === 0} onClick={onApplyDiagnosis}>
-            Áp dụng vào chẩn đoán
-          </Button>
+                  {medicine.forDiseases && medicine.forDiseases.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                      <span className="text-[11px] text-muted-foreground">Trị bệnh:</span>
+                      {medicine.forDiseases.map((d, i) => (
+                        <span key={i} className="rounded bg-tile px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {medicine.usage && <p className="mt-1.5 text-xs text-muted-foreground">{medicine.usage}</p>}
+
+                  {(medicine.dosage || medicine.instruction) && (
+                    <div className="mt-2 space-y-1 rounded-field border border-border bg-background p-2 text-xs">
+                      {medicine.dosage && (
+                        <p className="text-muted-foreground">
+                          <span className="font-semibold text-foreground">Liều dùng:</span> {medicine.dosage}
+                        </p>
+                      )}
+                      {medicine.instruction && (
+                        <p className="text-muted-foreground">
+                          <span className="font-semibold text-foreground">Cách dùng:</span> {medicine.instruction}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {medicine.warnings && medicine.warnings.length > 0 && (
+                    <div className="mt-2 rounded-field border border-red-200 bg-red-50 p-2 text-[11px] text-red-800">
+                      {medicine.warnings.map((w, wi) => (
+                        <p key={wi}>⚠ {w}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-2.5 flex justify-end border-t border-border pt-2">
+                    <Button variant="ghost" size="sm" className="px-3 text-xs" onClick={() => onUseMedicine(medicine)}>
+                      <HiOutlinePlus /> Thêm vào đơn
+                    </Button>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+
+          <div className="mt-3 border-t border-border pt-2 text-right">
+            <span className="text-[11px] text-muted-foreground">
+              * Thuốc gợi ý mang tính tham khảo theo phác đồ CDSS. Bác sĩ quyết định điều trị theo tình trạng lâm sàng.
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-tile border border-border bg-card p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h4 className="font-semibold">Gợi ý thuốc</h4>
-          <span className="text-xs text-muted-foreground">Xác suất</span>
-        </div>
+      {/* Lời khuyên dinh dưỡng & chăm sóc phục hồi */}
+      {hasLifestyle && (
+        <div className="rounded-tile border border-border bg-card p-4">
+          <div className="flex flex-col gap-3 border-b border-border pb-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="font-semibold">
+                Lời khuyên dinh dưỡng & chăm sóc phục hồi
+                <span className="ml-2 text-xs font-medium text-muted-foreground">(theo bệnh: {lifestyle.disease})</span>
+              </h4>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Hướng dẫn lối sống, chế độ ăn uống và các lưu ý chăm sóc thường ngày.
+              </p>
+            </div>
 
-        <ul className="space-y-4">
-          {result.medicines.map((medicine, index) => (
-            <li key={`${medicine.name}-${index}`}>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold">{index + 1}. {medicine.name}</p>
-                <span className="shrink-0 text-sm font-bold tabular-nums">{medicine.probability}%</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const parts = [];
+                if (lifestyle.diets?.length) parts.push(`- Chế độ dinh dưỡng: ${lifestyle.diets.join("; ")}`);
+                if (lifestyle.precautions?.length) parts.push(`- Lưu ý chăm sóc & phòng ngừa: ${lifestyle.precautions.join("; ")}`);
+                if (lifestyle.workouts?.length) parts.push(`- Vận động & sinh hoạt: ${lifestyle.workouts.join("; ")}`);
+                onApplyLifestyleToNotes(parts.join("\n"));
+              }}
+            >
+              Sao chép vào Ghi chú điều trị
+            </Button>
+          </div>
+
+          <div className="mt-3 grid gap-3 text-xs sm:grid-cols-3">
+            {lifestyle.diets && lifestyle.diets.length > 0 && (
+              <div className="rounded-field border border-border bg-tile p-2.5">
+                <p className="mb-1 font-semibold">Chế độ dinh dưỡng:</p>
+                <ul className="list-inside list-disc space-y-0.5 text-muted-foreground">
+                  {lifestyle.diets.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
               </div>
-              <ProbabilityBar value={medicine.probability} />
-              <div className="mt-1 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-muted-foreground">{medicine.usage}</p>
-                <Button variant="ghost" size="sm" className="self-start px-3 text-xs sm:self-auto" onClick={() => onUseMedicine(medicine)}>
-                  <HiOutlinePlus /> Thêm vào đơn
-                </Button>
+            )}
+
+            {lifestyle.precautions && lifestyle.precautions.length > 0 && (
+              <div className="rounded-field border border-border bg-tile p-2.5">
+                <p className="mb-1 font-semibold">Lưu ý chăm sóc:</p>
+                <ul className="list-inside list-disc space-y-0.5 text-muted-foreground">
+                  {lifestyle.precautions.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
               </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+            )}
+
+            {lifestyle.workouts && lifestyle.workouts.length > 0 && (
+              <div className="rounded-field border border-border bg-tile p-2.5">
+                <p className="mb-1 font-semibold">Vận động & sinh hoạt:</p>
+                <ul className="list-inside list-disc space-y-0.5 text-muted-foreground">
+                  {lifestyle.workouts.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

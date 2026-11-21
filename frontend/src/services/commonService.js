@@ -1,6 +1,5 @@
 import http, { unwrap } from "../api/http";
 import { toUiDoctor } from "../api/adapters";
-import { apiChatbotMessage } from "../mock/mockApi";
 
 export const commonService = {
   async getSpecialties() {
@@ -14,5 +13,11 @@ export const commonService = {
 };
 
 export const chatbotService = {
-  sendMessage: (payload) => apiChatbotMessage(payload),
+  // Gọi BE thật: FE -> BE (:5000/api/chatbot/message) -> AI_SERVICE (:8000)
+  // role và userId backend tự lấy từ token nên không cần gửi.
+  // Trả về cùng dạng như mock cũ: { success, data: { reply, createdAt } }
+  async sendMessage({ message }) {
+    const res = unwrap(await http.post("/chatbot/message", { message }));
+    return { success: true, data: res.data };
+  },
 };

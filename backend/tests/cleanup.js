@@ -1,4 +1,6 @@
-// Dọn dữ liệu kiểm thử: CHỈ xóa user có email test-%@example.com, chuyên khoa/phòng tên "TEST-%"
+// Dọn dữ liệu kiểm thử: CHỈ xóa user có email thuộc miền thử nghiệm
+// ("test-%@example.com" của các lần chạy cũ, hoặc "%@test.medicare.vn" sau khi đã đổi
+// sang tên người Việt Nam), chuyên khoa/phòng tên "TEST-%" hoặc có "(thử nghiệm)"
 // và các bản ghi phụ thuộc của chúng. Không đụng tới dữ liệu thật.
 //   npm run test:cleanup              → xóa
 //   npm run test:cleanup -- --dry-run → chỉ đếm
@@ -7,9 +9,20 @@ import pool, { withTransaction } from '../src/config/db.js';
 const DRY = process.argv.includes('--dry-run');
 const ids = (rows) => rows.map((r) => r.id);
 
+// Mẫu email thuộc miền thử nghiệm — dùng chung cho cả dạng cũ lẫn dạng sau khi đổi tên.
+const TEST_EMAIL_PATTERNS = ["test-%@example.com", "%@test.medicare.vn"];
+const TEST_EMAIL_SQL = TEST_EMAIL_PATTERNS.map(() => 'email LIKE ?').join(' OR ');
+
 async function selectIds(conn, sql, list) {
   if (Array.isArray(list) && !list.length) return [];
   const [rows] = await conn.query(sql, list === undefined ? [] : [list]);
+  return ids(rows);
+}
+
+/** selectIds nhưng truyền thẳng mẫu LIKE (dùng cho các mẫu email động). */
+async function selectIdsByPatterns(conn, sql, patterns) {
+  if (!patterns.length) return [];
+  const [rows] = await conn.query(sql, patterns);
   return ids(rows);
 }
 
@@ -27,12 +40,12 @@ async function del(conn, table, column, list, counts) {
 try {
   const counts = await withTransaction(async (conn) => {
     const c = {};
-    const users = await selectIds(conn, "SELECT id FROM users WHERE email LIKE 'test-%@example.com'");
+    const users = await selectIdsByPatterns(conn, `SELECT id FROM users WHERE ${TEST_EMAIL_SQL}`, TEST_EMAIL_PATTERNS);
     const patients = await selectIds(conn, 'SELECT id FROM patient WHERE user_id IN (?)', users);
     const doctors = await selectIds(conn, 'SELECT id FROM doctor WHERE user_id IN (?)', users);
     const admins = await selectIds(conn, 'SELECT id FROM admin_profile WHERE user_id IN (?)', users);
-    const specialties = await selectIds(conn, "SELECT id FROM specialty WHERE name LIKE 'TEST-%'");
-    const rooms = await selectIds(conn, "SELECT id FROM room WHERE name LIKE 'TEST-%'");
+    const specialties = await selectIds(conn, "SELECT id FROM specialty WHERE name LIKE 'TEST-%' OR name LIKE '%(thử nghiệm)'");
+    const rooms = await selectIds(conn, "SELECT id FROM room WHERE name LIKE 'TEST-%' OR name LIKE '%(thử nghiệm)'");
 
     const appts = [
       ...await selectIds(conn, 'SELECT id FROM appointment WHERE patient_id IN (?)', patients),
@@ -48,6 +61,15 @@ try {
     if (foreign[0].n > 0) {
       throw new Error(`Có ${foreign[0].n} lịch hẹn thật dùng phòng/admin test — hãy xử lý thủ công trước khi dọn`);
     }
+
+    // Dọn các lần đăng nhập sai của tài khoản test.
+    // Bắt buộc: giới hạn đăng nhập tính theo IP (MAX_PER_IP), mỗi lần chạy test tạo vài lần
+    // đăng nhập sai cùng một IP → tích tụ lại sẽ khiến cả lần chạy sau bị chặn 429.
+    const [attempts] = await conn.query(
+      `DELETE FROM login_attempts WHERE ${TEST_EMAIL_PATTERNS.map(() => 'login_key LIKE ?').join(' OR ')}`,
+      TEST_EMAIL_PATTERNS,
+    );
+    c.login_attempts = attempts.affectedRows;
 
     const invoices = await selectIds(conn, 'SELECT id FROM invoice WHERE appointment_id IN (?)', appts);
     const records = await selectIds(conn, 'SELECT id FROM medical_record WHERE appointment_id IN (?)', appts);

@@ -1,22 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Chatbot routes — POST /api/chatbot/message
+// Luồng: FE -> BE (route này) -> chatbot.controller -> chatbot.service -> AI_SERVICE (:8000)
 // ─────────────────────────────────────────────────────────────────────────────
-const { Router } = require('express');
-const authenticate = require('../middlewares/auth.middleware');
+import { Router } from 'express';
+import authenticate from '../middlewares/auth.middleware.js';
+import { sendMessage } from '../controllers/chatbot.controller.js';
 
 const router = Router();
 
-// POST /api/chatbot/message (cần auth)
-router.post('/message', authenticate, (req, res) => {
-  // TODO: Phase sau — kết nối chatbot.controller.js → Ollama / AI_SERVICE
-  res.json({
-    success: true,
-    message: 'Thành công',
-    data: {
-      reply: 'Chatbot đang trong quá trình phát triển. Vui lòng thử lại sau!',
-      createdAt: new Date().toISOString(),
-    },
-  });
-});
+// POST /api/chatbot/message (cần đăng nhập, mọi vai trò đều dùng được)
+router.post('/message', authenticate, sendMessage);
 
-module.exports = router;
+export default router;

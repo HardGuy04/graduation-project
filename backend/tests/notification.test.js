@@ -35,7 +35,7 @@ test('đặt lịch / xác nhận sinh thông báo; danh sách và số chưa đ
   assert.equal(list.status, 200);
   assert.deepEqual(list.body.data.map((n) => n.type), ['APPOINTMENT_CONFIRMED', 'APPOINTMENT_CREATED']);
   assert.ok(list.body.data.every((n) => n.isRead === false && n.appointmentId === soonAppt.id));
-  assert.match(list.body.data[0].text, /TEST Bác sĩ notif-doc/);
+  assert.match(list.body.data[0].text, new RegExp(doc.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   const c = await api('GET', '/api/patient/notifications/unread-count', { token: p.accessToken });
   assert.equal(c.body.data.unread, 2);
   assert.equal((await api('GET', '/api/patient/notifications', { token: admin.accessToken })).status, 403);
@@ -61,7 +61,10 @@ test('nhắc lịch: tạo đúng 1 thông báo cho lịch trong 24 giờ tới,
     "SELECT text FROM notification WHERE appointment_id = ? AND type = 'APPOINTMENT_REMINDER'", [soonAppt.id],
   );
   assert.equal(rows.length, 1);
-  assert.match(rows[0].text, /^Nhắc lịch: bạn có lịch khám với BS TEST Bác sĩ notif-doc lúc \d{2}:\d{2} \d{2}\/\d{2}\/\d{4}\.$/);
+  assert.match(
+    rows[0].text,
+    new RegExp(`^Nhắc lịch: bạn có lịch khám với BS ${doc.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} lúc \\d{2}:\\d{2} \\d{2}/\\d{2}/\\d{4}\\.$`),
+  );
 
   // Lịch đã hủy không được nhắc
   const far = await api('POST', '/api/appointments', {

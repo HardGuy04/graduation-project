@@ -156,7 +156,7 @@ test('admin quản lý lịch và ngày nghỉ của bác sĩ (được ghi nh�
   assert.equal(all.status, 200);
   assert.equal(all.body.pagination.total, 1);
   assert.equal(all.body.data[0].leaveDate, pastDate);
-  assert.equal(all.body.data[0].doctorName, 'TEST Bác sĩ sched-doc');
+  assert.equal(all.body.data[0].doctorName, doc.fullName);
   // Bác sĩ không tự xóa được ngày nghỉ đã qua (ảnh hưởng tính lương)
   assert.equal((await api('DELETE', `/api/doctor/leaves/${l.body.data.id}`, { token: doc.accessToken })).status, 404);
 });

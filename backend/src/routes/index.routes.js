@@ -8,6 +8,8 @@ import patientRoutes from './patient.routes.js';
 import adminRoutes from './admin.routes.js';
 import appointmentRoutes from './appointment.routes.js';
 import paymentRoutes from './payment.routes.js';
+import aiRoutes from './ai.routes.js';
+import chatbotRoutes from './chatbot.routes.js';
 
 const router = Router();
 
@@ -27,5 +29,9 @@ router.use('/doctor', doctorRoutes);
 router.use('/patient', patientRoutes);
 router.use('/admin', adminRoutes);
 router.use('/appointments', appointmentRoutes);
+
+// AI: proxy tới dịch vụ Python (:8000). Chatbot dùng được cho mọi vai trò, /ai chỉ bác sĩ + admin.
+router.use('/chatbot', chatbotRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

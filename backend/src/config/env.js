@@ -47,6 +47,11 @@ const env = Object.freeze({
   API_PUBLIC_URL: (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, ''),
 
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+
+  // Dịch vụ AI (Python/FastAPI) chạy ở :8000 — luồng: FE -> BE (:5000) -> AI_SERVICE (:8000)
+  AI_SERVICE_URL: (process.env.AI_SERVICE_URL || 'http://localhost:8000').replace(/\/$/, ''),
+  AI_INTERNAL_KEY: process.env.AI_INTERNAL_KEY || 'dev-internal-secret-key-change-in-prod',
+
   VNPAY_TMN_CODE: process.env.VNPAY_TMN_CODE || '',
   VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET || '',
   VNPAY_RETURN_URL: process.env.VNPAY_RETURN_URL || `http://localhost:${process.env.PORT || 5000}/api/payments/vnpay/return`,

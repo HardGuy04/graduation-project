@@ -27,7 +27,7 @@ before(async () => {
     assert.equal(r.status, 201, JSON.stringify(r.body));
   }
   assert.equal((await api('POST', `/api/admin/doctors/${doc.id}/leaves`, { token: t, body: { leaveDate: LEAVE } })).status, 201);
-  const room = await api('POST', '/api/admin/rooms', { token: t, body: { name: `TEST-Phòng-${RUN}` } });
+  const room = await api('POST', '/api/admin/rooms', { token: t, body: { name: `Phòng ${RUN} (thử nghiệm)` } });
   roomId = room.body.data.id;
 });
 
@@ -43,7 +43,7 @@ test('slot trống → 201 PENDING; patientId trong body bị bỏ qua', async (
   assert.equal(r.body.data.status, 'PENDING');
   assert.equal(r.body.data.patient.id, pA.user.patient.id);
   assert.equal(r.body.data.startAt, at(D, '03:00'));
-  assert.equal(r.body.data.doctor.fullName, 'TEST Bác sĩ appt-doc');
+  assert.equal(r.body.data.doctor.fullName, doc.user.fullName);
   first = r.body.data;
 });
 
@@ -153,7 +153,16 @@ test('phạm vi xem: lịch người khác → 404; danh sách chỉ gồm lịc
 test('phân quyền hành động: bác sĩ không đặt lịch, bệnh nhân không xác nhận', async () => {
   assert.equal((await book(doc.accessToken, { doctorId: doc.id, startAt: at(D, '02:00') })).status, 403);
   assert.equal((await api('PATCH', `/api/appointments/${first.id}/confirm`, { token: pA.accessToken })).status, 403);
-  assert.equal((await api('PATCH', `/api/appointments/${first.id}/check-in`, { token: doc.accessToken })).status, 403);
+  // Bệnh nhân không được check-in lịch của chính mình
+  assert.equal((await api('PATCH', `/api/appointments/${first.id}/check-in`, { token: pA.accessToken })).status, 403);
+  // Bác sĩ ĐƯỢC check-in lịch của chính mình (nút "Bắt đầu khám" trên FE gọi endpoint này).
+  // Dùng lịch riêng (bác sĩ 2, khung giờ 01:00Z) để không làm đổi trạng thái `first`
+  // và không tranh chỗ với các test sau.
+  const own = await book(pB.accessToken, { doctorId: doc2.id, startAt: at(D, '01:00'), endAt: at(D, '01:30') });
+  assert.equal(own.status, 201, JSON.stringify(own.body));
+  const ci = await api('PATCH', `/api/appointments/${own.body.data.id}/check-in`, { token: doc2.accessToken });
+  assert.equal(ci.status, 200);
+  assert.equal(ci.body.data.status, 'CHECKED_IN');
 });
 
 test('bệnh nhân hủy → slot được giải phóng; hủy lần 2 → 409; người khác hủy → 404', async () => {

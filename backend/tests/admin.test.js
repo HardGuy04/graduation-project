@@ -1,7 +1,7 @@
 // Kiểm thử danh mục & quản trị: node --test tests/admin.test.js (cần `npm run seed` trước)
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { api, RUN, testEmail, registerPatient, seedLogin, login } from './helpers.js';
+import { api, RUN, testEmail, registerPatient, seedLogin, login, nextTestName } from './helpers.js';
 
 let admin; let doctorSeed; let patient;
 let specialtyId; let newDoctor; let roomId;
@@ -21,7 +21,7 @@ test('phân quyền: PATIENT/DOCTOR gọi API admin → 403, không token → 40
 });
 
 test('chuyên khoa: tạo 201, trùng tên 409, sửa 200, xem công khai', async () => {
-  const name = `TEST-Khoa-${RUN}`;
+  const name = `Chuyên khoa ${RUN} (thử nghiệm)`;
   const r = await api('POST', '/api/admin/specialties', { token: admin.accessToken, body: { name, description: 'x' } });
   assert.equal(r.status, 201);
   specialtyId = r.body.data.id;
@@ -46,7 +46,7 @@ test('admin tạo tài khoản bác sĩ; chuyên khoa không tồn tại → 400
   const r = await api('POST', '/api/admin/users', {
     token: admin.accessToken,
     body: {
-      role: 'DOCTOR', email: testEmail('doc'), fullName: 'TEST Bác sĩ Mới', password: 'Test@12345',
+      role: 'DOCTOR', email: testEmail('doc'), fullName: `BS. ${nextTestName()}`, password: 'Test@12345',
       phone: '0911222333', specialtyId, experience: 7, degree: 'Thạc sĩ',
     },
   });
@@ -96,7 +96,7 @@ test('admin sửa hồ sơ bác sĩ', async () => {
 test('admin tạo bệnh nhân (có ví 0đ) và xem hồ sơ bệnh nhân', async () => {
   const r = await api('POST', '/api/admin/users', {
     token: admin.accessToken,
-    body: { role: 'PATIENT', email: testEmail('pat-by-admin'), fullName: 'TEST BN tại quầy', password: 'Test@12345', gender: 'male' },
+    body: { role: 'PATIENT', email: testEmail('pat-by-admin'), fullName: nextTestName(), password: 'Test@12345', gender: 'male' },
   });
   assert.equal(r.status, 201);
   const d = await api('GET', `/api/admin/patients/${r.body.data.patient.id}`, { token: admin.accessToken });
@@ -116,7 +116,7 @@ test('phân trang + id sai định dạng → 400, không tồn tại → 404', 
 });
 
 test('phòng: tạo, trùng tên, phòng trống, bảo trì, xóa', async () => {
-  const name = `TEST-Room-${RUN}`;
+  const name = `Phòng ${RUN} (thử nghiệm)`;
   const r = await api('POST', '/api/admin/rooms', { token: admin.accessToken, body: { name } });
   assert.equal(r.status, 201);
   roomId = r.body.data.id;
@@ -139,7 +139,7 @@ test('xóa chuyên khoa đang có bác sĩ → 409; chuyên khoa trống → 204
   const r = await api('DELETE', `/api/admin/specialties/${specialtyId}`, { token: admin.accessToken });
   assert.equal(r.status, 409);
   assert.equal(r.body.error.code, 'SPECIALTY_IN_USE');
-  const empty = await api('POST', '/api/admin/specialties', { token: admin.accessToken, body: { name: `TEST-Empty-${RUN}` } });
+  const empty = await api('POST', '/api/admin/specialties', { token: admin.accessToken, body: { name: `Chuyên khoa trống ${RUN} (thử nghiệm)` } });
   assert.equal((await api('DELETE', `/api/admin/specialties/${empty.body.data.id}`, { token: admin.accessToken })).status, 204);
 });
 

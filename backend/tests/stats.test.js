@@ -3,7 +3,7 @@
 // hoặc lọc theo bác sĩ / chuyên khoa tạo riêng cho lần chạy này.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { api, RUN, testEmail, registerPatient, seedLogin, login, clinicDate, dbQuery, dbClose } from './helpers.js';
+import { api, RUN, testEmail, registerPatient, seedLogin, login, clinicDate, dbQuery, dbClose, nextTestName } from './helpers.js';
 
 let admin; let doc; let specialtyId;
 const X = clinicDate(20);
@@ -16,13 +16,14 @@ const get = (path) => api('GET', path, { token: admin.accessToken });
 before(async () => {
   admin = await seedLogin('admin');
   const t = admin.accessToken;
-  specialtyId = (await api('POST', '/api/admin/specialties', { token: t, body: { name: `TEST-Stats-${RUN}` } })).body.data.id;
+  specialtyId = (await api('POST', '/api/admin/specialties', { token: t, body: { name: `Chuyên khoa thống kê ${RUN} (thử nghiệm)` } })).body.data.id;
   const email = testEmail('stats-doc');
+  const docName = `BS. ${nextTestName()}`;
   const u = await api('POST', '/api/admin/users', {
-    token: t, body: { role: 'DOCTOR', email, fullName: 'TEST Bác sĩ stats', password: 'Test@12345', specialtyId },
+    token: t, body: { role: 'DOCTOR', email, fullName: docName, password: 'Test@12345', specialtyId },
   });
   assert.equal(u.status, 201);
-  doc = { id: u.body.data.doctor.id, ...(await login(email, 'Test@12345')) };
+  doc = { id: u.body.data.doctor.id, fullName: docName, ...(await login(email, 'Test@12345')) };
   assert.equal((await api('POST', `/api/admin/doctors/${doc.id}/schedules`, {
     token: t, body: { dayOfWeek: X.dow, startTime: '08:00', endTime: '12:00', slotDuration: 30, maxPatient: 20 },
   })).status, 201);
@@ -75,7 +76,7 @@ test('theo bác sĩ và theo chuyên khoa (kèm doanh thu)', async () => {
   );
   const s = await get(`/api/admin/stats/by-specialty?from=${X.date}&to=${X.date}`);
   const sp = s.body.data.rows.find((x) => x.specialtyId === specialtyId);
-  assert.equal(sp.name, `TEST-Stats-${RUN}`);
+  assert.equal(sp.name, `Chuyên khoa thống kê ${RUN} (thử nghiệm)`);
   assert.equal(sp.doctors, 1);
   assert.equal(sp.total, 4);
   assert.equal(sp.revenue, '100000.00');
