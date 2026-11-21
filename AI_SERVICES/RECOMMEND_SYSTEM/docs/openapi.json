@@ -1,0 +1,490 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI_SERVICE - Clinic Decision Support System",
+    "description": "Disease & medicine recommendation and internal AI module for Clinic Management System",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint indicating model readiness and version.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/chatbot/": {
+      "post": {
+        "tags": [
+          "chatbot"
+        ],
+        "summary": "Internal Chatbot Stub",
+        "operationId": "internal_chatbot_stub_internal_chatbot__post",
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/chatbot": {
+      "post": {
+        "tags": [
+          "chatbot"
+        ],
+        "summary": "Internal Chatbot Stub",
+        "operationId": "internal_chatbot_stub_internal_chatbot_post",
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/predict-disease": {
+      "post": {
+        "tags": [
+          "drug_recommendation"
+        ],
+        "summary": "Predict Disease",
+        "description": "Predict suspect diseases and recommend medicines based on symptoms.",
+        "operationId": "predict_disease_internal_predict_disease_post",
+        "parameters": [
+          {
+            "name": "X-Internal-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Internal-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiseasePredictionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiseasePredictionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing internal key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Model not loaded yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DiseaseItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Disease name in Vietnamese"
+          },
+          "probability": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Probability",
+            "description": "Model relevance score (0-100), not true clinical probability"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Clinical description of the disease",
+            "default": ""
+          },
+          "specialty": {
+            "type": "string",
+            "title": "Specialty",
+            "description": "Assigned clinical specialty among the 6 faculties"
+          },
+          "matchedSymptoms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matchedsymptoms",
+            "description": "User-input symptoms matching this candidate disease"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "probability",
+          "specialty"
+        ],
+        "title": "DiseaseItem",
+        "description": "Suggested disease candidate."
+      },
+      "DiseasePredictionData": {
+        "properties": {
+          "diseases": {
+            "items": {
+              "$ref": "#/components/schemas/DiseaseItem"
+            },
+            "type": "array",
+            "title": "Diseases",
+            "description": "Ranked list of suspect diseases (sorted descending by probability)"
+          },
+          "medicines": {
+            "items": {
+              "$ref": "#/components/schemas/MedicineItem"
+            },
+            "type": "array",
+            "title": "Medicines",
+            "description": "Ranked list of recommended medicines (sorted descending by score)"
+          },
+          "recognizedSymptoms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recognizedsymptoms",
+            "description": "List of symptom names extracted from input"
+          },
+          "unrecognizedTerms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unrecognizedterms",
+            "description": "Input phrases/tokens that could not be mapped to known symptoms"
+          },
+          "redFlags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Redflags",
+            "description": "Emergency clinical red flags detected in input"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Operational or clinical caveats (e.g. low confidence)"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer",
+            "description": "Mandatory legal and clinical disclaimer",
+            "default": "Kết quả chỉ mang tính tham khảo, không thay thế chẩn đoán của bác sĩ."
+          },
+          "modelVersion": {
+            "type": "string",
+            "title": "Modelversion",
+            "description": "Version identifier of loaded model artifact"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modelVersion"
+        ],
+        "title": "DiseasePredictionData",
+        "description": "Data payload in successful prediction response."
+      },
+      "DiseasePredictionRequest": {
+        "properties": {
+          "symptoms": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Symptoms",
+            "description": "Free-form Vietnamese symptom description (1-1000 chars)",
+            "examples": [
+              "Đau họng, sốt nhẹ, ho khan"
+            ]
+          },
+          "diagnosis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnosis",
+            "description": "Optional provisional diagnosis from the examining doctor",
+            "default": ""
+          },
+          "patient": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PatientInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional patient details for allergy checking"
+          },
+          "topK": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topk",
+            "description": "Number of disease candidates to return (default 3)",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "symptoms"
+        ],
+        "title": "DiseasePredictionRequest",
+        "description": "Request payload for POST /internal/predict-disease."
+      },
+      "DiseasePredictionResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/DiseasePredictionData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DiseasePredictionResponse",
+        "description": "Standard success response format."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": false
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable error description"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Machine-readable error type identifier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "description": "Standard error response format matching system contract."
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          },
+          "model_loaded": {
+            "type": "boolean",
+            "title": "Model Loaded",
+            "default": false
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          }
+        },
+        "type": "object",
+        "title": "HealthResponse",
+        "description": "Health check response format."
+      },
+      "MedicineItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Medicine commercial/generic name"
+          },
+          "probability": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Probability",
+            "description": "Composite relevance score based on disease weights"
+          },
+          "usage": {
+            "type": "string",
+            "title": "Usage",
+            "description": "Clinical usage indication description (never specific dosages)"
+          },
+          "forDiseases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fordiseases",
+            "description": "List of suggested diseases this medicine treats"
+          },
+          "prescriptionRequired": {
+            "type": "boolean",
+            "title": "Prescriptionrequired",
+            "description": "Whether this medicine requires a formal prescription",
+            "default": true
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Safety warnings (e.g., patient allergy conflicts)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "probability",
+          "usage"
+        ],
+        "title": "MedicineItem",
+        "description": "Recommended medicine for the suggested diseases."
+      },
+      "PatientInfo": {
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 150.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age",
+            "description": "Patient age in years"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "Patient gender (male, female, other)"
+          },
+          "allergies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allergies",
+            "description": "Known drug allergies or sensitivities"
+          }
+        },
+        "type": "object",
+        "title": "PatientInfo",
+        "description": "Patient metadata for clinical context and safety warnings."
+      }
+    }
+  }
+}

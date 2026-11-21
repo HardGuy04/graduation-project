@@ -1,0 +1,109 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [
+        "xin chào", "chào bạn", "chào chatbot", "hi", "hello",
+        "alo", "cho hỏi chút", "chào phòng khám"
+      ],
+      "response": "Xin chào! Tôi là trợ lý ảo của phòng khám. Tôi có thể giúp bạn tra cứu chuyên khoa, lịch làm việc bác sĩ, thông tin phòng khám, hoặc giải đáp một số kiến thức y tế thông thường. Bạn cần hỗ trợ gì ạ?"
+    },
+    {
+      "tag": "thanks",
+      "patterns": [
+        "cảm ơn", "cám ơn bạn", "thank you", "cảm ơn nhiều nhé", "thanks"
+      ],
+      "response": "Không có gì ạ, rất vui vì đã giúp được bạn. Nếu cần thêm thông tin gì, cứ hỏi tôi nhé!"
+    },
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "tạm biệt", "bye", "hẹn gặp lại", "tôi phải đi rồi"
+      ],
+      "response": "Tạm biệt bạn, chúc bạn nhiều sức khỏe. Hẹn gặp lại tại phòng khám!"
+    },
+    {
+      "tag": "bot_identity",
+      "patterns": [
+        "bạn là ai", "bạn là chatbot đúng không", "bạn có phải là bác sĩ không",
+        "bạn có thể làm gì", "bạn giúp được gì cho tôi"
+      ],
+      "response": "Tôi là trợ lý ảo (chatbot) của phòng khám, không phải bác sĩ. Tôi có thể cung cấp thông tin về chuyên khoa, lịch làm việc bác sĩ, thông tin phòng khám và một số kiến thức y tế phổ thông. Với các vấn đề sức khỏe cụ thể, bạn nên đặt lịch khám trực tiếp với bác sĩ."
+    },
+    {
+      "tag": "fever",
+      "patterns": [
+        "bị sốt phải làm sao", "sốt cao nên làm gì", "triệu chứng sốt",
+        "sốt nhẹ có nguy hiểm không", "cách hạ sốt tại nhà"
+      ],
+      "response": "Khi bị sốt, bạn nên nghỉ ngơi, uống nhiều nước, mặc quần áo thoáng mát và có thể chườm ấm để hạ nhiệt. Nếu sốt trên 38.5°C kéo dài, kèm co giật, khó thở hoặc không hạ sau 2-3 ngày, bạn nên đến phòng khám để được bác sĩ thăm khám trực tiếp."
+    },
+    {
+      "tag": "sore_throat",
+      "patterns": [
+        "đau họng phải làm sao", "viêm họng có nguy hiểm không",
+        "bị đau rát cổ họng", "ho và đau họng"
+      ],
+      "response": "Đau họng thường do viêm họng, cảm cúm hoặc thay đổi thời tiết. Bạn nên súc miệng nước muối ấm, uống nhiều nước ấm, giữ ấm cổ họng. Nếu đau họng kéo dài trên 5-7 ngày, sốt cao hoặc khó nuốt, bạn nên đến khám chuyên khoa Tai Mũi Họng."
+    },
+    {
+      "tag": "headache",
+      "patterns": [
+        "đau đầu phải làm sao", "nhức đầu thường xuyên", "đau nửa đầu",
+        "chóng mặt đau đầu"
+      ],
+      "response": "Đau đầu có thể do căng thẳng, mất ngủ, thiếu nước hoặc nhiều nguyên nhân khác. Bạn nên nghỉ ngơi ở nơi yên tĩnh, uống đủ nước và tránh dùng thiết bị điện tử liên tục. Nếu đau đầu dữ dội, kéo dài hoặc kèm theo mờ mắt, nôn ói, bạn nên đến khám sớm để được chẩn đoán chính xác."
+    },
+    {
+      "tag": "stomachache",
+      "patterns": [
+        "đau bụng phải làm sao", "đau dạ dày", "đầy bụng khó tiêu",
+        "buồn nôn đau bụng", "tiêu chảy nên làm gì"
+      ],
+      "response": "Đau bụng nhẹ có thể do rối loạn tiêu hóa hoặc ăn uống không phù hợp, bạn nên ăn nhẹ, tránh đồ cay nóng nhiều dầu mỡ và uống đủ nước. Nếu đau bụng dữ dội, kéo dài, kèm sốt cao hoặc nôn ói nhiều, bạn cần đến phòng khám ngay để được kiểm tra kịp thời."
+    },
+    {
+      "tag": "skin_rash",
+      "patterns": [
+        "nổi mẩn ngứa", "da bị dị ứng", "phát ban ngoài da", "nổi mụn ngứa"
+      ],
+      "response": "Các vấn đề về da như mẩn ngứa, phát ban có thể do dị ứng thời tiết, thực phẩm hoặc mỹ phẩm. Bạn nên tránh gãi mạnh, giữ vùng da sạch và khô thoáng. Nếu tình trạng không cải thiện sau vài ngày hoặc lan rộng, bạn nên đến khám chuyên khoa Da liễu."
+    },
+    {
+      "tag": "back_pain",
+      "patterns": [
+        "đau lưng phải làm sao", "đau vai gáy", "đau khớp gối", "nhức mỏi xương khớp"
+      ],
+      "response": "Đau lưng, đau khớp thường liên quan đến tư thế sinh hoạt hoặc vận động sai cách. Bạn nên hạn chế ngồi/đứng quá lâu một tư thế, tập các bài giãn cơ nhẹ nhàng. Nếu đau kéo dài, tê bì tay chân hoặc ảnh hưởng vận động, bạn nên khám chuyên khoa Cơ xương khớp."
+    },
+    {
+      "tag": "insomnia",
+      "patterns": [
+        "mất ngủ phải làm sao", "khó ngủ về đêm", "ngủ không sâu giấc"
+      ],
+      "response": "Để cải thiện giấc ngủ, bạn nên hạn chế dùng điện thoại trước khi ngủ, giữ phòng ngủ yên tĩnh và đi ngủ đúng giờ. Nếu tình trạng mất ngủ kéo dài trên 2 tuần và ảnh hưởng đến sinh hoạt, bạn nên trao đổi với bác sĩ để được tư vấn phù hợp."
+    },
+    {
+      "tag": "when_to_see_doctor",
+      "patterns": [
+        "khi nào nên đi khám bác sĩ", "triệu chứng nào cần khám ngay",
+        "dấu hiệu nguy hiểm cần đi viện"
+      ],
+      "response": "Bạn nên đến khám ngay nếu có các dấu hiệu như: sốt cao không hạ, khó thở, đau ngực, nôn ói liên tục, chảy máu bất thường, hoặc các triệu chứng kéo dài không thuyên giảm sau vài ngày tự chăm sóc tại nhà."
+    },
+    {
+      "tag": "nutrition_advice",
+      "patterns": [
+        "ăn uống thế nào cho tốt", "chế độ dinh dưỡng hợp lý", "nên ăn gì để khỏe mạnh"
+      ],
+      "response": "Một chế độ ăn cân bằng nên có đủ rau xanh, trái cây, đạm từ thịt cá và uống đủ 1.5-2 lít nước mỗi ngày. Hạn chế đồ ăn nhiều dầu mỡ, đường và muối. Nếu bạn có bệnh lý nền, nên hỏi ý kiến bác sĩ để có chế độ dinh dưỡng phù hợp riêng."
+    },
+    {
+      "tag": "emergency_advice",
+      "patterns": [
+        "cấp cứu ở đâu", "trường hợp khẩn cấp phải gọi ai", "tai nạn cần làm gì"
+      ],
+      "response": "Trong trường hợp khẩn cấp đe dọa tính mạng (khó thở nặng, ngất xỉu, chảy máu nhiều, tai nạn nghiêm trọng...), bạn nên gọi ngay 115 (cấp cứu) hoặc đến cơ sở y tế/bệnh viện gần nhất, không nên chỉ chờ tư vấn qua chatbot."
+    }
+  ]
+}
