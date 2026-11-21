@@ -45,7 +45,7 @@ test('GET /me: không token → 401, có token → 200', async () => {
 });
 
 test('PATCH /me cập nhật hồ sơ; avatar base64 bị từ chối', async () => {
-  const r = await api('PATCH', '/api/auth/me', { token: p.accessToken, body: { address: 'Cầu Giấy', fullName: 'Test Updated' } });
+  const r = await api('PATCH', '/api/auth/me', { token: p.accessToken, body: { address: 'Cầu Giấy', fullName: 'Nguyễn Thị Hồng Vân' } });
   assert.equal(r.status, 200);
   assert.equal(r.body.data.patient.address, 'Cầu Giấy');
   const bad = await api('PATCH', '/api/auth/me', { token: p.accessToken, body: { avatarUrl: 'data:image/png;base64,AAAA' } });

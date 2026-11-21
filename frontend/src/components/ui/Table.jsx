@@ -1,8 +1,8 @@
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
 
-export function TableShell({ children }) {
+export function TableShell({ children, className }) {
   return (
-    <div className="overflow-x-auto rounded-xl2 border border-slate-100 bg-white">
+    <div className={cn("overflow-x-auto scrollbar-thin rounded-card border border-border bg-card shadow-hairline", className)}>
       <table className="w-full min-w-[640px] text-left text-sm">{children}</table>
     </div>
   );
@@ -10,19 +10,19 @@ export function TableShell({ children }) {
 
 export function Th({ children, className }) {
   return (
-    <th className={clsx("px-4 py-3 text-xs font-semibold uppercase tracking-wide text-ink-faint bg-slate-50/80 first:rounded-tl-xl2 last:rounded-tr-xl2", className)}>
+    <th scope="col" className={cn("bg-tile/60 px-4 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground", className)}>
       {children}
     </th>
   );
 }
 
-export function Td({ children, className }) {
-  return <td className={clsx("px-4 py-3.5 align-middle text-ink", className)}>{children}</td>;
+export function Td({ children, className, ...props }) {
+  return <td className={cn("px-4 py-3.5 align-middle text-foreground", className)} {...props}>{children}</td>;
 }
 
 export function Tr({ children, className, ...props }) {
   return (
-    <tr className={clsx("border-t border-slate-100 hover:bg-teal-50/40 transition-colors", className)} {...props}>
+    <tr className={cn("border-t border-border transition-colors hover:bg-tile/50", className)} {...props}>
       {children}
     </tr>
   );

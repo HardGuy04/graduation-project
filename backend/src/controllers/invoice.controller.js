@@ -50,7 +50,12 @@ export async function myWalletTransactions(req, res) {
   paginated(res, r.rows, r);
 }
 
+const clientIp = (req) => req.ip || req.socket?.remoteAddress || '127.0.0.1';
+
 export async function myTopup(req, res) {
-  const ip = req.ip || req.socket?.remoteAddress || '127.0.0.1';
-  created(res, await payment.patientTopup(req.user.patientId, body(req), { ip }));
+  created(res, await payment.patientTopup(req.user.patientId, body(req), { ip: clientIp(req) }));
+}
+
+export async function payWithVnpay(req, res) {
+  created(res, await payment.patientPayInvoice(req.user, req.params.id, body(req), { ip: clientIp(req) }));
 }

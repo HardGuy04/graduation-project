@@ -7,6 +7,7 @@ import env from './config/env.js';
 import pool from './config/db.js';
 import apiRoutes from './routes/index.routes.js';
 import errorHandler from './middlewares/errorHandler.js';
+import { AVATAR_DIR } from './services/avatar.service.js';
 
 const app = express();
 
@@ -30,6 +31,14 @@ if (env.NODE_ENV !== 'test') {
 }
 
 app.use(express.json({ limit: '100kb' }));
+
+// Ảnh đại diện: frontend khác origin nên phải nới Cross-Origin-Resource-Policy mà helmet đặt mặc định same-origin
+app.use('/uploads/avatars', express.static(AVATAR_DIR, {
+  index: false,
+  dotfiles: 'deny',
+  maxAge: '7d',
+  setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin'),
+}));
 
 app.get('/health', async (_req, res) => {
   await pool.query('SELECT 1');

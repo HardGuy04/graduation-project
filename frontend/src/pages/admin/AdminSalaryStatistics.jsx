@@ -4,10 +4,11 @@ import Card, { CardHeader } from "../../components/ui/Card";
 import StatCard from "../../components/common/StatCard";
 import TrendAreaChart from "../../components/charts/TrendAreaChart";
 import SimpleBarChart from "../../components/charts/SimpleBarChart";
-import { Select } from "../../components/ui/Field";
+import { ComboboxField } from "../../components/app/ComboboxField";
 import { TableShell, Th, Td, Tr } from "../../components/ui/Table";
 import { Spinner, EmptyState } from "../../components/ui/Feedback";
 import Avatar from "../../components/ui/Avatar";
+import { CHART_SECONDARY } from "../../components/charts/theme";
 import { adminService } from "../../services/adminService";
 import { formatCurrency } from "../../utils/formatters";
 
@@ -63,14 +64,19 @@ export default function AdminSalaryStatistics() {
   const growth = totalPrevMonth ? Math.round(((totalThisMonth - totalPrevMonth) / totalPrevMonth) * 100) : null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-ink-faint">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Dữ liệu tổng hợp từ bảng lương (income) · ngày nghỉ (dayoff) được tính lại theo từng tháng, tự động về 0 khi sang tháng mới
         </p>
-        <Select className="max-w-[190px] shrink-0" value={month} onChange={(e) => setMonth(e.target.value)}>
-          {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
-        </Select>
+        <ComboboxField
+          className="shrink-0 sm:w-[220px]"
+          aria-label="Chọn tháng"
+          value={month}
+          onChange={(v) => v && setMonth(v)}
+          options={months.map((m) => ({ value: m, label: monthLabel(m) }))}
+          placeholder="Chọn tháng"
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -82,7 +88,7 @@ export default function AdminSalaryStatistics() {
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader title="Xu hướng tổng quỹ lương" subtitle="Tổng thực nhận toàn bộ bác sĩ theo từng tháng" />
-          <TrendAreaChart data={payrollTrend} dataKey="received" color="#D9A441" valueFormatter={formatCurrency} xKey="date" />
+          <TrendAreaChart data={payrollTrend} dataKey="received" color={CHART_SECONDARY} valueFormatter={formatCurrency} xKey="date" />
         </Card>
         <Card className="lg:col-span-2">
           <CardHeader title="Lương theo bác sĩ" subtitle={monthLabel(month)} />
@@ -92,9 +98,9 @@ export default function AdminSalaryStatistics() {
         </Card>
       </div>
 
-      <Card padded={false}>
-        <div className="px-6 pt-6"><CardHeader title="Bảng chi tiết lương" subtitle={`${monthLabel(month)} · lương cơ bản quy đổi theo ${26} ngày công chuẩn`} /></div>
-        <div className="px-2 pb-2">
+      <div>
+        <CardHeader title="Bảng chi tiết lương" subtitle={`${monthLabel(month)} · lương cơ bản quy đổi theo ${26} ngày công chuẩn`} />
+        <div>
           <TableShell>
             <thead>
               <tr>
@@ -112,15 +118,15 @@ export default function AdminSalaryStatistics() {
                   </Td>
                   <Td>{formatCurrency(r.baseSalary)}</Td>
                   <Td>{r.dayon}/26</Td>
-                  <Td className={r.dayoff > 0 ? "text-clay-500 font-semibold" : "text-ink-faint"}>{r.dayoff}</Td>
-                  <Td className="text-leaf-600 font-medium">+{formatCurrency(r.bonus)}</Td>
-                  <Td className="font-bold text-ink">{formatCurrency(r.received)}</Td>
+                  <Td className={r.dayoff > 0 ? "font-semibold text-destructive" : "text-muted-foreground"}>{r.dayoff}</Td>
+                  <Td className="font-medium text-accent">+{formatCurrency(r.bonus)}</Td>
+                  <Td className="font-bold tabular-nums">{formatCurrency(r.received)}</Td>
                 </Tr>
               ))}
             </tbody>
           </TableShell>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

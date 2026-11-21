@@ -7,10 +7,14 @@ import Card, { CardHeader } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Avatar from "../../components/ui/Avatar";
-import { FormRow, Input, Select, Textarea } from "../../components/ui/Field";
+import { FormRow, Input, Textarea } from "../../components/ui/Field";
 import { TableShell, Th, Td, Tr } from "../../components/ui/Table";
 import { Spinner, EmptyState } from "../../components/ui/Feedback";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { Badge } from "../../components/app/Badge";
+import { DateFieldRHF } from "../../components/app/DateField";
+import { toISODate } from "@/lib/date";
+import { ComboboxFieldRHF } from "../../components/app/ComboboxField";
 import { adminService } from "../../services/adminService";
 import { formatCurrency, formatDateLong } from "../../utils/formatters";
 import { WEEKDAY_LABEL } from "../../utils/constants";
@@ -58,30 +62,26 @@ export default function AdminDoctorDetail() {
   const latestIncome = salary?.monthly?.[salary.monthly.length - 1];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <Link to="/admin/doctors" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-faint hover:text-teal-600">
-        <HiOutlineArrowLeft className="h-4 w-4" /> Quay lại danh sách bác sĩ
-      </Link>
+    <div className="space-y-6">
+      <Button asChild variant="ghost" size="sm" className="-ml-2">
+        <Link to="/admin/doctors"><HiOutlineArrowLeft /> Quay lại danh sách bác sĩ</Link>
+      </Button>
 
-      <Card className="flex flex-col sm:flex-row sm:items-center gap-5">
-        <Avatar name={doctor.fullName} color={doctor.avatarColor} src={doctor.avatarUrl} size="lg" />
+      <Card className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <Avatar name={doctor.fullName} src={doctor.avatarUrl} size="lg" />
         <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-xl font-extrabold font-display text-ink">{doctor.fullName}</h2>
-            {doctor.onLeaveToday && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-200 bg-gold-50 px-2.5 py-1 text-xs font-semibold text-gold-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-current" /> Đang nghỉ hôm nay
-              </span>
-            )}
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-headline">{doctor.fullName}</h2>
+            {doctor.onLeaveToday && <Badge tone="sky" dot>Đang nghỉ hôm nay</Badge>}
           </div>
-          <p className="text-sm text-ink-faint mt-0.5">{doctor.degree} · {doctor.specialtyName} · {doctor.experienceYears} năm kinh nghiệm</p>
-          <p className="text-sm text-ink-soft mt-2 max-w-2xl">{doctor.description}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{doctor.degree} · {doctor.specialtyName} · {doctor.experienceYears} năm kinh nghiệm</p>
+          <p className="mt-2 max-w-2xl text-sm">{doctor.description}</p>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-ink-faint">Thực nhận tháng gần nhất</p>
-          <p className="text-2xl font-extrabold font-display text-teal-600">{formatCurrency(latestIncome?.received)}</p>
+        <div className="rounded-tile bg-tile px-5 py-4 sm:text-right">
+          <p className="text-xs text-muted-foreground">Thực nhận tháng gần nhất</p>
+          <p className="text-headline tabular-nums">{formatCurrency(latestIncome?.received)}</p>
           {latestIncome?.dayoff > 0 && (
-            <p className="text-xs text-clay-500 mt-1">Nghỉ {latestIncome.dayoff} ngày trong tháng</p>
+            <p className="mt-1 text-xs font-medium text-destructive">Nghỉ {latestIncome.dayoff} ngày trong tháng</p>
           )}
         </div>
       </Card>
@@ -110,9 +110,9 @@ export default function AdminDoctorDetail() {
                     <Td>{s.room}</Td>
                     <Td>{s.maxPatients}</Td>
                     <Td className="text-right">
-                      <button onClick={() => handleDeleteSchedule(s.id)} className="p-1.5 rounded-lg text-ink-faint hover:bg-clay-50 hover:text-clay-500">
-                        <HiOutlineTrash className="h-4 w-4" />
-                      </button>
+                      <Button variant="ghost-danger" size="icon" onClick={() => handleDeleteSchedule(s.id)} title="Xóa lịch" aria-label={`Xóa lịch ${WEEKDAY_LABEL[s.dayOfWeek]} ${s.startTime}–${s.endTime}`}>
+                        <HiOutlineTrash />
+                      </Button>
                     </Td>
                   </Tr>
                 ))}
@@ -125,12 +125,12 @@ export default function AdminDoctorDetail() {
           <CardHeader title="Thu nhập 6 tháng gần nhất" subtitle="Thực nhận = Lương cơ bản quy đổi theo ngày công + Thưởng" />
           <div className="space-y-2.5">
             {salary?.monthly?.map((m) => (
-              <div key={m.month} className="flex items-center justify-between rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm">
+              <div key={m.month} className="flex items-center justify-between rounded-field bg-tile/60 px-4 py-3 text-sm">
                 <div>
-                  <span className="font-medium text-ink-soft">Tháng {m.month.split("-")[1]}/{m.month.split("-")[0]}</span>
-                  <p className="text-xs text-ink-faint mt-0.5">{m.dayon} ngày công{m.dayoff > 0 ? ` · nghỉ ${m.dayoff} ngày` : ""}</p>
+                  <span className="font-medium">Tháng {m.month.split("-")[1]}/{m.month.split("-")[0]}</span>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{m.dayon} ngày công{m.dayoff > 0 ? ` · nghỉ ${m.dayoff} ngày` : ""}</p>
                 </div>
-                <span className="font-bold text-ink">{formatCurrency(m.received)}</span>
+                <span className="font-bold tabular-nums">{formatCurrency(m.received)}</span>
               </div>
             ))}
           </div>
@@ -146,19 +146,19 @@ export default function AdminDoctorDetail() {
         {leaves.length === 0 ? (
           <EmptyState icon={HiOutlineCalendar} title="Chưa có ngày nghỉ nào sắp tới" description="Đánh dấu khi bác sĩ báo xin nghỉ để tránh nhận nhầm lịch hẹn." />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {leaves.map((l) => (
               <div key={l.id} className="flex items-center justify-between gap-4 py-3">
                 <div>
-                  <p className="font-semibold text-ink">{formatDateLong(l.date)}</p>
-                  <p className="text-sm text-ink-faint">{l.reason}</p>
+                  <p className="font-semibold">{formatDateLong(l.date)}</p>
+                  <p className="text-sm text-muted-foreground">{l.reason}</p>
                   {l.affectedAppointments > 0 && (
-                    <p className="text-xs text-clay-500 font-medium mt-1">⚠ {l.affectedAppointments} lịch hẹn cần sắp xếp lại</p>
+                    <p className="mt-1 text-xs font-medium text-destructive">⚠ {l.affectedAppointments} lịch hẹn cần sắp xếp lại</p>
                   )}
                 </div>
-                <button onClick={() => setDeleteLeaveTarget(l)} className="p-2 rounded-lg text-ink-faint hover:bg-clay-50 hover:text-clay-500 shrink-0">
-                  <HiOutlineTrash className="h-4 w-4" />
-                </button>
+                <Button variant="ghost-danger" size="icon" className="shrink-0" onClick={() => setDeleteLeaveTarget(l)} title="Hủy ngày nghỉ" aria-label={`Hủy ngày nghỉ ${formatDateLong(l.date)}`}>
+                  <HiOutlineTrash />
+                </Button>
               </div>
             ))}
           </div>
@@ -192,8 +192,10 @@ export default function AdminDoctorDetail() {
   );
 }
 
+const ROOM_OPTIONS = ["Phòng khám 101", "Phòng khám 102", "Phòng khám 103", "Phòng khám Nhi"].map((r) => ({ value: r, label: r }));
+
 function ScheduleFormModal({ open, onClose, doctorId, onSaved }) {
-  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({
+  const { register, control, handleSubmit, reset, formState: { isSubmitting } } = useForm({
     defaultValues: { dayOfWeek: 1, startTime: "08:00", endTime: "12:00", slotDuration: 30, maxPatients: 8, room: "Phòng khám 101" },
   });
 
@@ -208,9 +210,12 @@ function ScheduleFormModal({ open, onClose, doctorId, onSaved }) {
     <Modal open={open} onClose={onClose} title="Thêm lịch làm việc">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormRow label="Thứ trong tuần">
-          <Select {...register("dayOfWeek")}>
-            {Object.entries(WEEKDAY_LABEL).filter(([k]) => k !== "0").map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </Select>
+          <ComboboxFieldRHF
+            control={control}
+            name="dayOfWeek"
+            options={Object.entries(WEEKDAY_LABEL).filter(([k]) => k !== "0").map(([value, label]) => ({ value, label }))}
+            placeholder="Chọn thứ"
+          />
         </FormRow>
         <div className="grid grid-cols-2 gap-3">
           <FormRow label="Giờ bắt đầu"><Input type="time" {...register("startTime")} /></FormRow>
@@ -221,12 +226,7 @@ function ScheduleFormModal({ open, onClose, doctorId, onSaved }) {
           <FormRow label="Số bệnh nhân tối đa"><Input type="number" min={1} {...register("maxPatients")} /></FormRow>
         </div>
         <FormRow label="Phòng khám">
-          <Select {...register("room")}>
-            <option>Phòng khám 101</option>
-            <option>Phòng khám 102</option>
-            <option>Phòng khám 103</option>
-            <option>Phòng khám Nhi</option>
-          </Select>
+          <ComboboxFieldRHF control={control} name="room" options={ROOM_OPTIONS} placeholder="Tìm phòng khám…" />
         </FormRow>
         <div className="flex justify-end gap-2.5 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>Hủy</Button>
@@ -238,7 +238,7 @@ function ScheduleFormModal({ open, onClose, doctorId, onSaved }) {
 }
 
 function LeaveFormModal({ open, onClose, doctorId, onSaved }) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+  const { register, control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     defaultValues: { date: new Date().toISOString().slice(0, 10), reason: "" },
   });
 
@@ -258,7 +258,7 @@ function LeaveFormModal({ open, onClose, doctorId, onSaved }) {
     <Modal open={open} onClose={onClose} title="Đánh dấu bác sĩ nghỉ" subtitle="Hệ thống sẽ tự chặn đặt lịch mới vào ngày này">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormRow label="Ngày nghỉ" required error={errors.date?.message}>
-          <Input type="date" min={new Date().toISOString().slice(0, 10)} {...register("date", { required: "Bắt buộc" })} />
+          <DateFieldRHF control={control} name="date" min={toISODate(new Date())} placeholder="Chọn ngày nghỉ" rules={{ required: "Bắt buộc" }} />
         </FormRow>
         <FormRow label="Lý do nghỉ" hint="VD: Nghỉ phép, nghỉ ốm, đi công tác…">
           <Textarea rows={2} placeholder="Lý do nghỉ (không bắt buộc)" {...register("reason")} />

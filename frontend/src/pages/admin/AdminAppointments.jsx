@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import { HiOutlineSearch, HiOutlinePlus, HiOutlineCheck, HiOutlineX, HiOutlineBan } from "react-icons/hi";
-import Card from "../../components/ui/Card";
+import { HiOutlinePlus, HiOutlineCheck, HiOutlineX, HiOutlineBan } from "react-icons/hi";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Tabs from "../../components/ui/Tabs";
 import { AppointmentStatusBadge } from "../../components/ui/StatusBadge";
 import { TableShell, Th, Td, Tr } from "../../components/ui/Table";
-import { FormRow, Input, Select, Textarea } from "../../components/ui/Field";
+import { FormRow, Input, Textarea } from "../../components/ui/Field";
+import { DateFieldRHF } from "../../components/app/DateField";
+import { ComboboxField, ComboboxFieldRHF } from "../../components/app/ComboboxField";
+import { SearchInput } from "../../components/app/Field";
 import { EmptyState, Spinner } from "../../components/ui/Feedback";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { adminService } from "../../services/adminService";
 import { commonService } from "../../services/commonService";
-import { formatDate } from "../../utils/formatters";
+import { formatDate, formatDateTime } from "../../utils/formatters";
+import { cn } from "@/lib/utils";
 
 const STATUS_TABS = [
   { value: "", label: "Tất cả" },
@@ -22,44 +25,119 @@ const STATUS_TABS = [
   { value: "completed", label: "Hoàn thành" },
   { value: "cancelled", label: "Đã hủy" },
   { value: "rejected", label: "Từ chối" },
+  { value: "no_show", label: "Không đến" },
 ];
+
+const SORT_OPTIONS = [
+  { value: "createdAt:desc", label: "Đăng ký mới nhất" },
+  { value: "createdAt:asc", label: "Đăng ký cũ nhất" },
+  { value: "startAt:asc", label: "Giờ khám sớm nhất" },
+  { value: "startAt:desc", label: "Giờ khám muộn nhất" },
+];
+
+const HOUR = 3_600_000;
+
+function useNow(intervalMs = 60_000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
+function clock(ms, now) {
+  const d = new Date(ms);
+  const time = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return new Date(now).toDateString() === d.toDateString() ? time : `${time} ${d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}`;
+}
+
+function remaining(ms) {
+  const min = Math.max(1, Math.round(ms / 60_000));
+  if (min < 60) return `còn ${min} phút`;
+  if (min < 48 * 60) return `còn ${Math.round(min / 60)} giờ`;
+  return `còn ${Math.round(min / 1440)} ngày`;
+}
+
+/** Hạn xử lý: lịch chờ phải duyệt trước giờ khám; quá giờ khám + N phút hệ thống tự hủy / tự ghi không đến. */
+function Deadline({ appt, now }) {
+  const start = new Date(appt.startAt).getTime();
+  const auto = appt.autoCloseAt ? new Date(appt.autoCloseAt).getTime() : null;
+  if (!["pending", "confirmed"].includes(appt.status) || Number.isNaN(start)) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const pending = appt.status === "pending";
+  if (now < start) {
+    const urgent = pending && start - now <= 2 * HOUR;
+    return (
+      <div className="text-xs leading-5">
+        <p className={cn("font-semibold", urgent ? "text-destructive" : pending ? "text-foreground" : "text-muted-foreground")}>
+          {pending ? `Duyệt trước ${clock(start, now)}` : `Check-in từ ${clock(start, now)}`}
+        </p>
+        <p className="text-muted-foreground">{remaining(start - now)}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="text-xs leading-5">
+      <p className="font-semibold text-destructive">{pending ? "Quá giờ, chưa duyệt" : "Quá giờ, chưa check-in"}</p>
+      {auto && (
+        <p className="text-muted-foreground">
+          {now < auto ? `${pending ? "Tự hủy" : "Tự ghi không đến"} lúc ${clock(auto, now)}` : "Đang chờ hệ thống tự đóng"}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function AdminAppointments() {
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState(SORT_OPTIONS[0].value);
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null); // {type, appt}
+  const now = useNow();
 
   async function load() {
     setLoading(true);
-    const res = await adminService.getAppointments({ status: status || undefined, q: q || undefined });
+    const [sortBy, order] = sort.split(":");
+    const res = await adminService.getAppointments({ status: status || undefined, q: q || undefined, sortBy, sort: order });
     setList(res.data);
     setLoading(false);
   }
 
-  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [status, q]); // eslint-disable-line
+  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [status, q, sort]); // eslint-disable-line
 
   async function runAction() {
     const { type, appt } = confirmAction;
     const fn = { confirm: adminService.confirmAppointment, reject: adminService.rejectAppointment, cancel: adminService.cancelAppointment }[type];
-    await fn(appt.id);
-    toast.success("Cập nhật lịch hẹn thành công");
+    try {
+      await fn(appt.id);
+      toast.success("Cập nhật lịch hẹn thành công");
+    } catch (err) {
+      toast.error(err.message || "Không cập nhật được lịch hẹn");
+    }
     setConfirmAction(null);
     load();
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <Tabs tabs={STATUS_TABS} active={status} onChange={setStatus} />
-        <div className="flex gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <HiOutlineSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input placeholder="Tìm theo tên/SĐT bệnh nhân…" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          <Button onClick={() => setModalOpen(true)}><HiOutlinePlus className="h-4 w-4" /> Tạo lịch hẹn</Button>
+        <div className="flex flex-wrap gap-3">
+          <SearchInput className="w-full max-w-xs flex-1" label="Tìm lịch hẹn" placeholder="Tìm theo tên/SĐT bệnh nhân…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <ComboboxField
+            className="w-[220px]"
+            aria-label="Sắp xếp lịch hẹn"
+            options={SORT_OPTIONS}
+            value={sort}
+            onChange={(v) => v && setSort(v)}
+            placeholder="Sắp xếp"
+          />
+          <Button onClick={() => setModalOpen(true)}><HiOutlinePlus /> Tạo lịch hẹn</Button>
         </div>
       </div>
 
@@ -71,41 +149,45 @@ export default function AdminAppointments() {
         <TableShell>
           <thead>
             <tr>
-              <Th>Bệnh nhân</Th><Th>Bác sĩ</Th><Th>Ngày khám</Th><Th>Giờ</Th><Th>Phòng khám</Th><Th>Lý do khám</Th><Th>Trạng thái</Th><Th className="text-right">Thao tác</Th>
+              <Th>Bệnh nhân</Th><Th>Bác sĩ</Th><Th>Ngày khám</Th><Th>Giờ</Th><Th>Phòng khám</Th><Th>Lý do khám</Th><Th>Đăng ký lúc</Th><Th>Trạng thái</Th><Th>Hạn xử lý</Th><Th className="text-right">Thao tác</Th>
             </tr>
           </thead>
           <tbody>
             {list.map((a) => (
               <Tr key={a.id}>
                 <Td className="font-semibold">{a.patientName}</Td>
-                <Td>{a.doctorName}<br /><span className="text-xs text-ink-faint">{a.doctorSpecialty}</span></Td>
+                <Td>{a.doctorName}<br /><span className="text-xs text-muted-foreground">{a.doctorSpecialty}</span></Td>
                 <Td>{formatDate(a.date)}</Td>
                 <Td>{a.startTime}</Td>
                 <Td>
                   {a.roomName ? (
-                    <span className="text-sm font-medium text-ink-soft">{a.roomName}</span>
+                    <span className="text-sm font-medium">{a.roomName}</span>
                   ) : (
-                    <span className="text-xs text-slate-400 italic">Chưa xếp phòng</span>
+                    <span className="text-xs italic text-muted-foreground">Chưa xếp phòng</span>
                   )}
                 </Td>
                 <Td className="max-w-[220px] truncate" title={a.reason}>{a.reason}</Td>
+                <Td className="whitespace-nowrap text-xs text-muted-foreground">{formatDateTime(a.createdAt)}</Td>
                 <Td><AppointmentStatusBadge status={a.status} /></Td>
+                <Td className="min-w-[150px]"><Deadline appt={a} now={now} /></Td>
                 <Td>
                   <div className="flex items-center justify-end gap-1.5">
                     {a.status === "pending" && (
                       <>
-                        <button onClick={() => setConfirmAction({ type: "confirm", appt: a })} className="p-2 rounded-lg text-leaf-600 hover:bg-leaf-50" title="Xác nhận">
-                          <HiOutlineCheck className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => setConfirmAction({ type: "reject", appt: a })} className="p-2 rounded-lg text-clay-500 hover:bg-clay-50" title="Từ chối">
-                          <HiOutlineX className="h-4 w-4" />
-                        </button>
+                        {now < new Date(a.startAt).getTime() && (
+                          <Button variant="ghost" size="icon" className="text-accent hover:bg-accent-soft" onClick={() => setConfirmAction({ type: "confirm", appt: a })} title="Xác nhận" aria-label={`Xác nhận lịch của ${a.patientName}`}>
+                            <HiOutlineCheck />
+                          </Button>
+                        )}
+                        <Button variant="ghost-danger" size="icon" onClick={() => setConfirmAction({ type: "reject", appt: a })} title="Từ chối" aria-label={`Từ chối lịch của ${a.patientName}`}>
+                          <HiOutlineX />
+                        </Button>
                       </>
                     )}
                     {["pending", "confirmed"].includes(a.status) && (
-                      <button onClick={() => setConfirmAction({ type: "cancel", appt: a })} className="p-2 rounded-lg text-ink-faint hover:bg-slate-100" title="Hủy lịch">
-                        <HiOutlineBan className="h-4 w-4" />
-                      </button>
+                      <Button variant="ghost" size="icon" onClick={() => setConfirmAction({ type: "cancel", appt: a })} title="Hủy lịch" aria-label={`Hủy lịch của ${a.patientName}`}>
+                        <HiOutlineBan />
+                      </Button>
                     )}
                   </div>
                 </Td>
@@ -131,7 +213,7 @@ export default function AdminAppointments() {
 }
 
 function CreateAppointmentModal({ open, onClose, onSaved }) {
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm();
+  const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm();
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [rooms, setRooms] = useState(null);
@@ -167,20 +249,28 @@ function CreateAppointmentModal({ open, onClose, onSaved }) {
   return (
     <Modal open={open} onClose={onClose} title="Tạo lịch hẹn tại quầy" subtitle="Dành cho bệnh nhân đặt lịch trực tiếp">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormRow label="Bệnh nhân" required error={errors.patientId?.message}>
-          <Select {...register("patientId", { required: true })}>
-            <option value="">— Chọn bệnh nhân —</option>
-            {patients.map((p) => <option key={p.id} value={p.id}>{p.fullName} · {p.phone}</option>)}
-          </Select>
+        <FormRow label="Bệnh nhân" required error={errors.patientId && "Vui lòng chọn bệnh nhân"}>
+          <ComboboxFieldRHF
+            control={control}
+            name="patientId"
+            rules={{ required: true }}
+            options={patients.map((p) => ({ value: p.id, label: `${p.fullName} · ${p.phone}` }))}
+            placeholder="Tìm theo tên hoặc SĐT…"
+          />
         </FormRow>
-        <FormRow label="Bác sĩ" required error={errors.doctorId?.message}>
-          <Select {...register("doctorId", { required: true })}>
-            <option value="">— Chọn bác sĩ —</option>
-            {doctors.map((d) => <option key={d.id} value={d.id}>{d.fullName} · {d.specialtyName}</option>)}
-          </Select>
+        <FormRow label="Bác sĩ" required error={errors.doctorId && "Vui lòng chọn bác sĩ"}>
+          <ComboboxFieldRHF
+            control={control}
+            name="doctorId"
+            rules={{ required: true }}
+            options={doctors.map((d) => ({ value: d.id, label: `${d.fullName} · ${d.specialtyName}` }))}
+            placeholder="Tìm theo tên hoặc chuyên khoa…"
+          />
         </FormRow>
         <div className="grid grid-cols-2 gap-3">
-          <FormRow label="Ngày khám" required><Input type="date" {...register("date", { required: true })} /></FormRow>
+          <FormRow label="Ngày khám" required error={errors.date && "Vui lòng chọn ngày"}>
+            <DateFieldRHF control={control} name="date" rules={{ required: true }} placeholder="Chọn ngày khám" />
+          </FormRow>
           <FormRow label="Giờ khám" required><Input type="time" {...register("startTime", { required: true })} /></FormRow>
         </div>
         <FormRow
@@ -190,16 +280,19 @@ function CreateAppointmentModal({ open, onClose, onSaved }) {
           hint={!date || !startTime ? "Chọn ngày & giờ khám trước để hệ thống hiển thị phòng còn trống" : undefined}
         >
           {!date || !startTime ? (
-            <Select disabled><option>— Chọn ngày & giờ trước —</option></Select>
+            <ComboboxField options={[]} disabled placeholder="Chọn ngày & giờ trước" />
           ) : rooms === null ? (
-            <Select disabled><option>Đang tìm phòng trống…</option></Select>
+            <ComboboxField options={[]} disabled placeholder="Đang tìm phòng trống…" />
           ) : rooms.length === 0 ? (
-            <Select disabled><option>Không còn phòng trống vào khung giờ này</option></Select>
+            <ComboboxField options={[]} disabled placeholder="Không còn phòng trống vào khung giờ này" />
           ) : (
-            <Select {...register("roomId", { required: "Vui lòng chọn phòng khám" })}>
-              <option value="">— Chọn phòng còn trống —</option>
-              {rooms.map((r) => <option key={r.id} value={r.id}>{r.name} · {r.floor}</option>)}
-            </Select>
+            <ComboboxFieldRHF
+              control={control}
+              name="roomId"
+              rules={{ required: "Vui lòng chọn phòng khám" }}
+              options={rooms.map((r) => ({ value: r.id, label: `${r.name} · ${r.floor}` }))}
+              placeholder="Tìm phòng còn trống…"
+            />
           )}
         </FormRow>
         <FormRow label="Lý do khám">

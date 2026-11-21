@@ -6,20 +6,14 @@ import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } fro
 import Button from "../../components/ui/Button";
 import { FormRow, Input } from "../../components/ui/Field";
 import { useAuth } from "../../context/AuthContext";
-
-const DEMO_ACCOUNTS = [
-  { role: "Admin", email: "test-seed-admin@example.com" },
-  { role: "Bác sĩ", email: "test-seed-doctor1@example.com" },
-];
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const {
-    register, handleSubmit, setValue, formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { email: "", password: "Test@12345" } });
+    register, handleSubmit, formState: { errors, isSubmitting },
+  } = useForm({ defaultValues: { email: "", password: "" } });
 
   async function onSubmit(values) {
     try {
@@ -42,7 +36,7 @@ export default function Login() {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <FormRow label="Email" required error={errors.email?.message}>
           <div className="relative">
-            <HiOutlineMail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+            <HiOutlineMail aria-hidden className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="email"
               placeholder="ban@email.com"
@@ -54,19 +48,22 @@ export default function Login() {
 
         <FormRow label="Mật khẩu" required error={errors.password?.message}>
           <div className="relative">
-            <HiOutlineLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+            <HiOutlineLockClosed aria-hidden className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              className="pl-10 pr-10"
+              className="pl-10 pr-12"
               {...register("password", { required: "Vui lòng nhập mật khẩu" })}
             />
+            {/* Nút chỉ có icon: cần tên truy cập + vùng bấm tối thiểu 44px */}
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-ink-soft"
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              aria-pressed={showPassword}
+              className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-tile hover:text-ink-soft"
             >
-              {showPassword ? <HiOutlineEyeOff className="h-4 w-4" /> : <HiOutlineEye className="h-4 w-4" />}
+              {showPassword ? <HiOutlineEyeOff aria-hidden className="h-4 w-4" /> : <HiOutlineEye aria-hidden className="h-4 w-4" />}
             </button>
           </div>
         </FormRow>
@@ -82,23 +79,6 @@ export default function Login() {
           Đăng ký bệnh nhân mới
         </Link>
       </p>
-
-      <div className="mt-8 rounded-xl2 border border-slate-100 bg-slate-50/70 p-4">
-        <p className="text-xs font-semibold uppercase text-ink-faint tracking-wide mb-2">Tài khoản thử (mật khẩu: Test@12345)</p>
-        <div className="space-y-1.5">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.email}
-              type="button"
-              onClick={() => setValue("email", acc.email)}
-              className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-white transition"
-            >
-              <span className="font-medium text-ink-soft">{acc.role}</span>
-              <span className="text-teal-600">{acc.email}</span>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

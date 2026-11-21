@@ -50,3 +50,6 @@ scratch/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Log cục bộ khi chạy dev
+*.log

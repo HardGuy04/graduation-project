@@ -3,6 +3,7 @@ import AppError from '../utils/AppError.js';
 import * as v from '../utils/validate.js';
 import { USER_STATUS } from '../utils/constants.js';
 import { parseAvatarUrl } from './auth.service.js';
+import { doctorBioSelect } from '../utils/schema.js';
 
 const notFound = () => new AppError(404, 'DOCTOR_NOT_FOUND', 'Bác sĩ không tồn tại');
 
@@ -23,6 +24,7 @@ function serialize(r, { admin = false } = {}) {
     specialtyName: r.specialty_name,
     experience: r.experience,
     degree: r.degree,
+    bio: r.bio ?? null,
   };
   if (admin) {
     Object.assign(out, {
@@ -54,8 +56,9 @@ function filters(query, { admin }) {
 async function listInternal(query, admin) {
   const { page, limit, offset } = v.pagination(query);
   const f = filters(query, { admin });
+  const bio = await doctorBioSelect();
   const [rows] = await pool.query(
-    `SELECT ${admin ? ADMIN_COLS : PUBLIC_COLS} ${BASE} ${f.sql} ORDER BY u.full_name LIMIT ? OFFSET ?`,
+    `SELECT ${admin ? ADMIN_COLS : PUBLIC_COLS}, ${bio} AS bio ${BASE} ${f.sql} ORDER BY u.full_name LIMIT ? OFFSET ?`,
     [...f.params, limit, offset],
   );
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total ${BASE} ${f.sql}`, f.params);
@@ -66,15 +69,17 @@ export const listPublic = (query) => listInternal(query, false);
 export const listAdmin = (query) => listInternal(query, true);
 
 export async function getPublic(id) {
+  const bio = await doctorBioSelect();
   const [rows] = await pool.query(
-    `SELECT ${PUBLIC_COLS} ${BASE} WHERE d.id = ? AND u.status = 'ACTIVE'`, [v.id(id, 'id')],
+    `SELECT ${PUBLIC_COLS}, ${bio} AS bio ${BASE} WHERE d.id = ? AND u.status = 'ACTIVE'`, [v.id(id, 'id')],
   );
   if (!rows.length) throw notFound();
   return serialize(rows[0]);
 }
 
 export async function getAdmin(id) {
-  const [rows] = await pool.query(`SELECT ${ADMIN_COLS} ${BASE} WHERE d.id = ?`, [v.id(id, 'id')]);
+  const bio = await doctorBioSelect();
+  const [rows] = await pool.query(`SELECT ${ADMIN_COLS}, ${bio} AS bio ${BASE} WHERE d.id = ?`, [v.id(id, 'id')]);
   if (!rows.length) throw notFound();
   return serialize(rows[0], { admin: true });
 }

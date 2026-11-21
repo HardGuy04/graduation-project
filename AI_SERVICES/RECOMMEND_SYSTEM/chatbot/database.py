@@ -18,11 +18,16 @@ Schema MySQL thật được dùng:
 Chỉ lấy bác sĩ có users.status='ACTIVE' và lịch có status='ACTIVE'.
 Bảng doctor_schedule KHÔNG có cột phòng nên trường "room" luôn là None.
 """
+import logging
 import os
 import sqlite3
 from typing import List, Dict, Optional
 
 from . import config
+
+# Log thay vì print: print ra console Windows (cp1252) sẽ văng UnicodeEncodeError
+# khi MySQL lỗi, khiến nhánh fallback sang SQLite cũng chết theo.
+logger = logging.getLogger("ai_service.chatbot.database")
 
 CLINIC_INFO = {
     "name": "Phòng khám MediCare Hub",
@@ -226,28 +231,28 @@ class ResilientMySQLRepository:
         try:
             return self.mysql.get_specialties()
         except Exception as e:
-            print(f"[chatbot.database] MySQL lỗi: {e}. Đang dùng dữ liệu dự phòng SQLite.")
+            logger.warning("MySQL lỗi: %s. Đang dùng dữ liệu dự phòng SQLite.", e)
             return self.fallback.get_specialties()
 
     def find_doctors_by_specialty(self, specialty_keyword: str) -> List[Dict]:
         try:
             return self.mysql.find_doctors_by_specialty(specialty_keyword)
         except Exception as e:
-            print(f"[chatbot.database] MySQL lỗi: {e}. Đang dùng dữ liệu dự phòng SQLite.")
+            logger.warning("MySQL lỗi: %s. Đang dùng dữ liệu dự phòng SQLite.", e)
             return self.fallback.find_doctors_by_specialty(specialty_keyword)
 
     def find_doctor_by_name(self, name_keyword: str) -> Optional[Dict]:
         try:
             return self.mysql.find_doctor_by_name(name_keyword)
         except Exception as e:
-            print(f"[chatbot.database] MySQL lỗi: {e}. Đang dùng dữ liệu dự phòng SQLite.")
+            logger.warning("MySQL lỗi: %s. Đang dùng dữ liệu dự phòng SQLite.", e)
             return self.fallback.find_doctor_by_name(name_keyword)
 
     def get_schedule_by_doctor_id(self, doctor_id: int) -> List[Dict]:
         try:
             return self.mysql.get_schedule_by_doctor_id(doctor_id)
         except Exception as e:
-            print(f"[chatbot.database] MySQL lỗi: {e}. Đang dùng dữ liệu dự phòng SQLite.")
+            logger.warning("MySQL lỗi: %s. Đang dùng dữ liệu dự phòng SQLite.", e)
             return self.fallback.get_schedule_by_doctor_id(doctor_id)
 
     def get_clinic_info(self) -> Dict[str, str]:

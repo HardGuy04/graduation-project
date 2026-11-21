@@ -39,9 +39,19 @@ const env = Object.freeze({
   // Bật nhắc lịch tự động (đặt REMINDER_ENABLED=false khi chạy test)
   REMINDER_ENABLED: process.env.REMINDER_ENABLED !== 'false',
 
+  // Quá giờ hẹn bấy nhiêu phút mà lịch vẫn PENDING → tự hủy; CONFIRMED chưa check-in → tự đánh dấu NO_SHOW. 0 = tắt.
+  APPT_AUTO_CLOSE_MINUTES: Math.max(0, Number(process.env.APPT_AUTO_CLOSE_MINUTES ?? 30) || 0),
+
+  // Ảnh đại diện lưu trên đĩa (đường dẫn tính từ thư mục backend), phục vụ tại API_PUBLIC_URL/uploads/avatars/...
+  UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+  API_PUBLIC_URL: (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, ''),
+
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
-  AI_SERVICE_URL: process.env.AI_SERVICE_URL || 'http://localhost:8000',
+
+  // Dịch vụ AI (Python/FastAPI) chạy ở :8000 — luồng: FE -> BE (:5000) -> AI_SERVICE (:8000)
+  AI_SERVICE_URL: (process.env.AI_SERVICE_URL || 'http://localhost:8000').replace(/\/$/, ''),
   AI_INTERNAL_KEY: process.env.AI_INTERNAL_KEY || 'dev-internal-secret-key-change-in-prod',
+
   VNPAY_TMN_CODE: process.env.VNPAY_TMN_CODE || '',
   VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET || '',
   VNPAY_RETURN_URL: process.env.VNPAY_RETURN_URL || `http://localhost:${process.env.PORT || 5000}/api/payments/vnpay/return`,

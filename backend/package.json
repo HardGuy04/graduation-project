@@ -7,8 +7,9 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed": "node database/seed.js",
+    "rename:test-users": "node database/rename-test-users.js",
     "db:check": "node database/check.js",
-    "test": "node --test --test-concurrency=1 \"tests/*.test.js\"",
+    "test": "node tests/reset-attempts.js && node --test --test-concurrency=1 \"tests/*.test.js\"",
     "test:cleanup": "node tests/cleanup.js"
   },
   "keywords": [],

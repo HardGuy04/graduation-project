@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Card, { CardHeader } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
-import AvatarUpload from "../../components/common/AvatarUpload";
+import AvatarField from "../../components/app/AvatarField";
 import { FormRow, Input } from "../../components/ui/Field";
 import { useAuth } from "../../context/AuthContext";
 import { profileService } from "../../services/profileService";
@@ -20,15 +20,21 @@ export default function AdminProfile() {
   useEffect(() => { reset(user); }, [user]); // eslint-disable-line
 
   async function onSubmit(values) {
-    const res = await profileService.updateProfile(user.id, values);
-    updateLocalUser(res.data);
-    toast.success("Cập nhật hồ sơ thành công");
+    try {
+      const res = await profileService.updateProfile(user.id, values);
+      updateLocalUser(res.data);
+      toast.success("Cập nhật hồ sơ thành công");
+    } catch (err) {
+      toast.error(err.message || "Không lưu được hồ sơ");
+    }
   }
 
-  async function handleAvatarChange(avatarUrl) {
-    const res = await profileService.updateProfile(user.id, { avatarUrl });
+  async function handleAvatarChange(file) {
+    const res = file
+      ? await profileService.uploadAvatar(file)
+      : await profileService.updateProfile(user.id, { avatarUrl: null });
     updateLocalUser(res.data);
-    toast.success(avatarUrl ? "Đã cập nhật ảnh đại diện" : "Đã xóa ảnh đại diện");
+    toast.success(file ? "Đã cập nhật ảnh đại diện" : "Đã xóa ảnh đại diện");
   }
 
   async function onChangePassword(values) {
@@ -42,9 +48,9 @@ export default function AdminProfile() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6 animate-fade-in">
+    <div className="max-w-3xl space-y-6">
       <Card>
-        <AvatarUpload name={user.fullName} src={user.avatarUrl} color="#0F5C56" onChange={handleAvatarChange} />
+        <AvatarField name={user.fullName} src={user.avatarUrl} onChange={handleAvatarChange} />
       </Card>
 
       <Card>

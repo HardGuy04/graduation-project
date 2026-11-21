@@ -1,7 +1,7 @@
 import http, { unwrap } from "../api/http";
 import { apiAiPredictDisease } from "../mock/mockApi";
 
-// Đặt false để gọi API thật qua Backend (:5000) -> AI_SERVICE (:8000)
+// Đặt true để gọi hàm mock (không cần backend). Để false để gọi API thật qua Backend (:5000) -> AI_SERVICE (:8000).
 const USE_MOCK_PREDICT = false;
 
 export const aiService = {
@@ -32,4 +32,3 @@ export const aiService = {
     return unwrapped.data;
   },
 };
-

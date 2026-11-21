@@ -14,7 +14,7 @@ test('AI Integration: Phân quyền & Endpoint Gợi ý bệnh & Chatbot', async
     assert.ok(docToken, 'Doctor token must exist');
 
     const pat = await registerPatient('ai-user');
-    patToken = pat.tokens.accessToken;
+    patToken = pat.accessToken;
     assert.ok(patToken, 'Patient token must exist');
   });
 

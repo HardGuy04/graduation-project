@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import { HiOutlinePlus, HiOutlineSearch, HiOutlinePencil, HiOutlineEye, HiOutlineLockClosed, HiOutlineLockOpen } from "react-icons/hi";
-import Card from "../../components/ui/Card";
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineEye, HiOutlineLockClosed, HiOutlineLockOpen } from "react-icons/hi";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Avatar from "../../components/ui/Avatar";
 import { AccountStatusBadge } from "../../components/ui/StatusBadge";
 import { TableShell, Th, Td, Tr } from "../../components/ui/Table";
-import { FormRow, Input, Select, Textarea } from "../../components/ui/Field";
+import { FormRow, Input, Textarea } from "../../components/ui/Field";
+import { SearchInput } from "../../components/app/Field";
+import { ComboboxField, ComboboxFieldRHF } from "../../components/app/ComboboxField";
+import { Badge } from "../../components/app/Badge";
 import { EmptyState, Spinner } from "../../components/ui/Feedback";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { adminService } from "../../services/adminService";
 import { commonService } from "../../services/commonService";
-import { formatCurrency } from "../../utils/formatters";
 
 export default function AdminDoctors() {
   const [loading, setLoading] = useState(true);
@@ -51,20 +52,22 @@ export default function AdminDoctors() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-1 flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <HiOutlineSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input placeholder="Tìm bác sĩ theo tên, email…" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          <Select className="max-w-[200px]" value={specialtyFilter} onChange={(e) => setSpecialtyFilter(e.target.value)}>
-            <option value="">Tất cả chuyên khoa</option>
-            {specialties.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </Select>
+          <SearchInput className="w-full max-w-xs flex-1" label="Tìm bác sĩ" placeholder="Tìm bác sĩ theo tên, email…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <ComboboxField
+            className="sm:w-[240px]"
+            aria-label="Lọc theo chuyên khoa"
+            value={specialtyFilter}
+            onChange={setSpecialtyFilter}
+            options={specialties.map((s) => ({ value: s.id, label: s.name }))}
+            placeholder="Tất cả chuyên khoa"
+            showClear
+          />
         </div>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }}>
-          <HiOutlinePlus className="h-4 w-4" /> Thêm bác sĩ
+          <HiOutlinePlus /> Thêm bác sĩ
         </Button>
       </div>
 
@@ -89,10 +92,10 @@ export default function AdminDoctors() {
               <Tr key={d.id}>
                 <Td>
                   <div className="flex items-center gap-3">
-                    <Avatar name={d.fullName} color={d.avatarColor} src={d.avatarUrl} size="sm" />
+                    <Avatar name={d.fullName} src={d.avatarUrl} size="sm" />
                     <div>
                       <p className="font-semibold">{d.fullName}</p>
-                      <p className="text-xs text-ink-faint">{d.email}</p>
+                      <p className="text-xs text-muted-foreground">{d.email}</p>
                     </div>
                   </div>
                 </Td>
@@ -103,23 +106,27 @@ export default function AdminDoctors() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <AccountStatusBadge status={d.status} />
                     {d.onLeaveToday && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-gold-200 bg-gold-50 px-2 py-0.5 text-[11px] font-semibold text-gold-600">
-                        Nghỉ hôm nay
-                      </span>
+                      <Badge tone="sky">Nghỉ hôm nay</Badge>
                     )}
                   </div>
                 </Td>
                 <Td>
                   <div className="flex items-center justify-end gap-1.5">
-                    <Link to={`/admin/doctors/${d.id}`} className="p-2 rounded-lg text-ink-faint hover:bg-slate-100 hover:text-teal-600" title="Xem chi tiết">
-                      <HiOutlineEye className="h-4 w-4" />
-                    </Link>
-                    <button onClick={() => { setEditing(d); setModalOpen(true); }} className="p-2 rounded-lg text-ink-faint hover:bg-slate-100 hover:text-teal-600" title="Sửa">
-                      <HiOutlinePencil className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => setToggleTarget(d)} className="p-2 rounded-lg text-ink-faint hover:bg-slate-100 hover:text-clay-500" title={d.status === "active" ? "Khóa tài khoản" : "Mở khóa"}>
-                      {d.status === "active" ? <HiOutlineLockClosed className="h-4 w-4" /> : <HiOutlineLockOpen className="h-4 w-4" />}
-                    </button>
+                    <Button asChild variant="ghost" size="icon" title="Xem chi tiết">
+                      <Link to={`/admin/doctors/${d.id}`} aria-label={`Xem chi tiết ${d.fullName}`}><HiOutlineEye /></Link>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditing(d); setModalOpen(true); }} title="Sửa" aria-label={`Sửa ${d.fullName}`}>
+                      <HiOutlinePencil />
+                    </Button>
+                    <Button
+                      variant={d.status === "active" ? "ghost-danger" : "ghost"}
+                      size="icon"
+                      onClick={() => setToggleTarget(d)}
+                      title={d.status === "active" ? "Khóa tài khoản" : "Mở khóa"}
+                      aria-label={`${d.status === "active" ? "Khóa tài khoản" : "Mở khóa"} ${d.fullName}`}
+                    >
+                      {d.status === "active" ? <HiOutlineLockClosed /> : <HiOutlineLockOpen />}
+                    </Button>
                   </div>
                 </Td>
               </Tr>
@@ -149,12 +156,16 @@ export default function AdminDoctors() {
   );
 }
 
+const DEGREE_OPTIONS = ["Bác sĩ", "Thạc sĩ", "Chuyên khoa I", "Chuyên khoa II", "Tiến sĩ"].map((d) => ({ value: d, label: d }));
+
 function DoctorFormModal({ open, onClose, doctor, specialties, onSaved }) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
+  const { register, control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
 
   useEffect(() => {
     if (open) {
-      reset(doctor || { specialtyId: specialties[0]?.id, experienceYears: 1, baseSalary: 15000000 });
+      reset(doctor
+        ? { ...doctor, degree: doctor.degree || DEGREE_OPTIONS[0].value }
+        : { specialtyId: specialties[0]?.id, degree: DEGREE_OPTIONS[0].value, experienceYears: 1, baseSalary: 15000000 });
     }
   }, [open, doctor]); // eslint-disable-line
 
@@ -189,18 +200,16 @@ function DoctorFormModal({ open, onClose, doctor, specialties, onSaved }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <FormRow label="Chuyên khoa" required>
-            <Select {...register("specialtyId", { required: true })}>
-              {specialties.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
+            <ComboboxFieldRHF
+              control={control}
+              name="specialtyId"
+              rules={{ required: true }}
+              options={specialties.map((s) => ({ value: s.id, label: s.name }))}
+              placeholder="Tìm chuyên khoa…"
+            />
           </FormRow>
           <FormRow label="Học vị">
-            <Select {...register("degree")}>
-              <option>Bác sĩ</option>
-              <option>Thạc sĩ</option>
-              <option>Chuyên khoa I</option>
-              <option>Chuyên khoa II</option>
-              <option>Tiến sĩ</option>
-            </Select>
+            <ComboboxFieldRHF control={control} name="degree" options={DEGREE_OPTIONS} placeholder="Chọn học vị" />
           </FormRow>
         </div>
         <div className="grid grid-cols-2 gap-3">

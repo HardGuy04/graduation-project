@@ -7,6 +7,7 @@
 //   3) Lưới an toàn cuối: unique index trên cột sinh active_doctor_slot / active_room_slot → ER_DUP_ENTRY → 409.
 // Chuyển trạng thái dùng UPDATE có điều kiện trạng thái hiện tại + kiểm tra affectedRows.
 import pool, { withTransaction } from '../config/db.js';
+import env from '../config/env.js';
 import AppError from '../utils/AppError.js';
 import * as v from '../utils/validate.js';
 import { ROLES, APPT_STATUS, INACTIVE_APPT_STATUSES, NOTIFICATION_TYPE } from '../utils/constants.js';
@@ -35,11 +36,19 @@ const SELECT_APPT = `
     LEFT JOIN medical_record mr ON mr.appointment_id = a.id
     LEFT JOIN invoice i ON i.appointment_id = a.id`;
 
+/** Mốc hệ thống tự đóng lịch chưa được xử lý (PENDING → hủy, CONFIRMED → không đến); null nếu không áp dụng. */
+function autoCloseAt(status, startAt) {
+  if (!env.APPT_AUTO_CLOSE_MINUTES || ![PENDING, CONFIRMED].includes(status) || !startAt) return null;
+  return new Date(new Date(startAt).getTime() + env.APPT_AUTO_CLOSE_MINUTES * 60_000).toISOString();
+}
+
 export function serialize(r) {
+  const startAt = v.fromMysql(r.start_at);
   return {
     id: r.id,
     status: r.status,
-    startAt: v.fromMysql(r.start_at),
+    autoCloseAt: autoCloseAt(r.status, startAt),
+    startAt,
     endAt: v.fromMysql(r.end_at),
     reason: r.reason,
     patient: {
@@ -105,10 +114,12 @@ export async function list(user, query) {
     if (q) { where.push('(pu.full_name LIKE ? OR pu.phone LIKE ?)'); params.push(q, q); }
   }
   const order = String(query.sort || '').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  // sortBy: startAt (giờ khám, mặc định) | createdAt (thời điểm đặt lịch)
+  const sortCol = String(query.sortBy || '').toLowerCase() === 'createdat' ? 'a.created_at' : 'a.start_at';
 
   const w = where.join(' AND ');
   const [rows] = await pool.query(
-    `${SELECT_APPT} WHERE ${w} ORDER BY a.start_at ${order}, a.id ${order} LIMIT ? OFFSET ?`,
+    `${SELECT_APPT} WHERE ${w} ORDER BY ${sortCol} ${order}, a.id ${order} LIMIT ? OFFSET ?`,
     [...params, limit, offset],
   );
   const [[{ total }]] = await pool.query(
@@ -368,4 +379,59 @@ export async function changeRoom(user, id, b) {
   } catch (err) {
     throw translateDbError(err);
   }
+}
+
+// ── Tự đóng lịch quá hạn xử lý ───────────────────────────────────────────────
+
+const AUTO_CLOSE_INTERVAL_MS = 5 * 60_000;
+const AUTO_CLOSE_BATCH = 200;
+
+/**
+ * Quá giờ hẹn APPT_AUTO_CLOSE_MINUTES phút: PENDING (lễ tân chưa duyệt) → CANCELLED, CONFIRMED (chưa check-in) → NO_SHOW.
+ * UPDATE có điều kiện trạng thái cũ nên chạy song song với thao tác tay / nhiều tiến trình không đóng trùng.
+ */
+export async function runAutoClose() {
+  const grace = env.APPT_AUTO_CLOSE_MINUTES;
+  if (!grace) return 0;
+  const [due] = await pool.query(
+    `SELECT id, status FROM appointment
+      WHERE status IN (?) AND start_at <= UTC_TIMESTAMP() - INTERVAL ? MINUTE
+      ORDER BY start_at LIMIT ?`,
+    [[PENDING, CONFIRMED], grace, AUTO_CLOSE_BATCH],
+  );
+  let closed = 0;
+  for (const { id, status } of due) {
+    const to = status === PENDING ? CANCELLED : NO_SHOW;
+    const done = await withTransaction(async (conn) => {
+      const [u] = await conn.query('UPDATE appointment SET status = ? WHERE id = ? AND status = ?', [to, id, status]);
+      if (u.affectedRows !== 1) return false;
+      const row = await fetchOne(conn, { role: ROLES.ADMIN }, id);
+      const when = formatClinicTime(new Date(v.fromMysql(row.start_at)));
+      const [type, text] = to === CANCELLED
+        ? [NOTIFICATION_TYPE.APPOINTMENT_CANCELLED,
+          `Lịch khám với BS ${row.doctor_name} lúc ${when} chưa được phòng khám xác nhận kịp nên đã tự động hủy. Vui lòng đặt lại lịch khác.`]
+        : [NOTIFICATION_TYPE.APPOINTMENT_NO_SHOW,
+          `Bạn đã không đến lịch khám với BS ${row.doctor_name} lúc ${when}; hệ thống ghi nhận vắng mặt sau ${grace} phút.`];
+      try {
+        await notifyStatus(conn, row, type, text);
+      } catch (err) {
+        if (err.code !== 'ER_DUP_ENTRY') throw err;
+      }
+      return true;
+    });
+    if (done) closed += 1;
+  }
+  return closed;
+}
+
+/** Job định kỳ trong tiến trình API; unref() để không giữ tiến trình sống khi tắt server. */
+export function startAutoCloseJob() {
+  if (!env.REMINDER_ENABLED || !env.APPT_AUTO_CLOSE_MINUTES) return null;
+  const tick = () => runAutoClose()
+    .then((n) => { if (n) console.log(`[auto-close] đã đóng ${n} lịch hẹn quá hạn`); })
+    .catch((err) => console.error('[auto-close]', err.code || err.message));
+  tick();
+  const timer = setInterval(tick, AUTO_CLOSE_INTERVAL_MS);
+  timer.unref();
+  return timer;
 }
